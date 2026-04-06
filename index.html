@@ -91,7 +91,55 @@ input[type="range"]{accent-color:var(--ac);width:100%}
 
 <div class="s">
   <div class="st">Passage</div>
-  <textarea id="txtIn">Our Father, who art in heaven, hallowed be thy name. Thy kingdom come, thy will be done, on earth as it is in heaven. Give us this day our daily bread, and forgive us our trespasses, as we forgive those who trespass against us, and lead us not into temptation, but deliver us from evil. Amen.</textarea>
+  <textarea id="txtIn">Every day and every dark night
+So hard to speak without lying
+If every birth is the ending
+And every life is dying
+Here in the spaces
+Here in the shadows
+Behind the faces
+Beneath the souls
+Everyone has it
+Everyone knows
+The dread of eternal love
+I take my pills
+I drink my drinks
+I never stop wondering what people think
+I hide in humility by never arriving
+I wax the Mercedes I dream about driving
+Here in the country
+Up in the air
+Out on the streets
+Everywhere
+Everyone has it
+Everyone knows
+The dread of eternal love
+The dread of eternal love
+The paint gets peeled off
+The paint gets put on
+We take off the best suit that we have donned
+We walk to the ocean
+Full of ourselves
+And she takes our soul from its shell
+She takes us
+She takes us
+Oh, she takes us
+Here in the spaces
+Here in the shadows
+Behind the faces
+Beneath the souls
+I take my pills
+I drink my drinks
+Forever concerned with what you think
+Down in the valley
+Up in the air
+In San Francisco
+Everywhere
+Everyone has it
+Everyone knows
+The dread of eternal love
+The dread of eternal love
+The dread of eternal love</textarea>
   <div style="display:flex;gap:2px;margin-top:2px">
     <button class="btn btn-s btn-sm" onclick="parseWords()">Parse</button>
     <button class="btn btn-s btn-sm" onclick="autoEm()">Auto-Emphasis</button>
@@ -295,7 +343,7 @@ input[type="range"]{accent-color:var(--ac);width:100%}
 
 <script>
 // ===================== STATE =====================
-let curS='cross',zm=1,svgO=null,WD=[],sel=new Set();
+let curS='diamond',zm=1,svgO=null,WD=[],sel=new Set();
 let nextStackId=1;
 let suppressGen=false;
 let lastLayout=null; // store last layout result for laser export
@@ -402,13 +450,13 @@ function updateUndoUI(){
 
 // Reset everything to factory defaults
 const DEFAULTS={
-  txtIn:`Our Father, who art in heaven, hallowed be thy name. Thy kingdom come, thy will be done, on earth as it is in heaven. Give us this day our daily bread, and forgive us our trespasses, as we forgive those who trespass against us, and lead us not into temptation, but deliver us from evil. Amen.`,
+  txtIn:`Every day and every dark night\nSo hard to speak without lying\nIf every birth is the ending\nAnd every life is dying\nHere in the spaces\nHere in the shadows\nBehind the faces\nBeneath the souls\nEveryone has it\nEveryone knows\nThe dread of eternal love\nI take my pills\nI drink my drinks\nI never stop wondering what people think\nI hide in humility by never arriving\nI wax the Mercedes I dream about driving\nHere in the country\nUp in the air\nOut on the streets\nEverywhere\nEveryone has it\nEveryone knows\nThe dread of eternal love\nThe dread of eternal love\nThe paint gets peeled off\nThe paint gets put on\nWe take off the best suit that we have donned\nWe walk to the ocean\nFull of ourselves\nAnd she takes our soul from its shell\nShe takes us\nShe takes us\nOh, she takes us\nHere in the spaces\nHere in the shadows\nBehind the faces\nBeneath the souls\nI take my pills\nI drink my drinks\nForever concerned with what you think\nDown in the valley\nUp in the air\nIn San Francisco\nEverywhere\nEveryone has it\nEveryone knows\nThe dread of eternal love\nThe dread of eternal love\nThe dread of eternal love`,
   svgW:'600',svgH:'900',armW:'32',barH:'22',barPos:'30',pad:'2',
   font:'Impact',vTight:'82',lSpace:'-2',
   caps:true,boldAll:true,outline:false,
   color:'#000000',lineSep:'',
   bridgeW:'2',traceRes:'3',fillCounters:false,
-  shape:'cross'
+  shape:'diamond'
 };
 
 function resetToDefaults(){
@@ -560,7 +608,7 @@ function pickShape(el){
   curS=el.dataset.shape;
 }
 // Highlight default
-document.querySelector('[data-shape="cross"]').click();
+document.querySelector('[data-shape="diamond"]').click();
 
 function aZ(){const s=document.getElementById('ps');if(s){s.style.transform=`scale(${zm})`;s.style.transformOrigin='top center'}}
 
