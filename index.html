@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Shape Cutter — Laser-Cut Text Art</title>
+<link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=Stardos+Stencil:wght@400;700&family=Oswald:wght@400;700&family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Teko:wght@400;700&family=Russo+One&family=Bungee&family=Permanent+Marker&family=Staatliches&family=Passion+One:wght@400;700;900&family=Saira+Stencil+One&family=Smokum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1a1a2e;--sf:#16213e;--s2:#0f3460;--ac:#e94560;--tx:#eee;--dm:#888;--bd:#333}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden}
+.app{display:grid;grid-template-columns:370px 1fr;height:100vh}
+.side{background:var(--sf);padding:12px;overflow-y:auto;border-right:1px solid var(--bd)}
+.side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+h1{font-size:1.1rem;color:var(--ac)}
+.sub{font-size:.68rem;color:var(--dm);margin-bottom:10px}
+.s{margin-bottom:10px}.st{font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--dm);margin-bottom:3px}
+label{display:block;font-size:.72rem;margin-bottom:1px;color:var(--dm)}
+textarea{width:100%;min-height:80px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:4px;padding:5px;font-family:Georgia,serif;font-size:.78rem;line-height:1.25;resize:vertical}
+textarea:focus,select:focus,input:focus{outline:none;border-color:var(--ac)}
+select,input[type="number"]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:4px;padding:3px 5px;font-size:.74rem}
+input[type="range"]{accent-color:var(--ac);width:100%}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.btn{width:100%;padding:7px;border:none;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .12s}
+.btn-p{background:var(--ac);color:#fff}.btn-p:hover{background:#d63851}
+.btn-s{background:var(--s2);color:var(--tx);margin-top:3px;font-size:.7rem;padding:5px}.btn-s:hover{background:#1a4a80}
+.btn-sm{padding:2px 7px;font-size:.64rem;width:auto;border-radius:3px}
+.hint{font-size:.62rem;color:var(--dm);margin-top:1px;font-style:italic}
+/* word chips */
+.wl{max-height:150px;overflow-y:auto;background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:4px;margin-top:3px}
+.wl::-webkit-scrollbar{width:3px}.wl::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.wc{display:inline-block;padding:1px 4px;margin:1px;border-radius:2px;cursor:pointer;transition:all .1s;border:1.5px solid transparent;user-select:none}
+.wc:hover{filter:brightness(1.15)}.wc.sel{border-color:#fff}
+.t1{background:#1a1a30;color:#555;font-size:.52rem}
+.t2{background:#1a1a34;color:#777;font-size:.58rem}
+.t3{background:#202040;color:#999;font-size:.64rem}
+.t4{background:#282850;color:#bbb;font-size:.68rem}
+.t5{background:#2e2654;color:#d4b4ff;font-weight:600;font-size:.72rem}
+.t6{background:#3e2244;color:#ffb4c8;font-weight:700;font-size:.76rem}
+.t7{background:#4e2a1e;color:#ffd4a4;font-weight:800;font-size:.82rem}
+.tb{padding:1px 5px;border-radius:2px;font-size:.6rem;cursor:pointer;border:1px solid var(--bd);background:var(--bg);color:var(--dm);transition:all .1s}
+.tb:hover{border-color:var(--ac);color:var(--tx)}
+.tb.act{border-color:var(--ac);background:rgba(233,69,96,.2);color:var(--tx)}
+.lb-mark{display:inline-block;color:var(--ac);font-size:.5rem;vertical-align:middle;margin:0 1px;opacity:.7;font-weight:700}
+.lb-mark.stack{color:#f0c040}
+.wc.has-lb{border-right:2px solid var(--ac)}
+.wc.has-stack{border-right:2px solid #f0c040}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.toggle{position:relative;width:28px;height:15px;cursor:pointer}
+.toggle input{display:none}
+.toggle-track{position:absolute;inset:0;background:var(--bd);border-radius:8px;transition:background .2s}
+.toggle input:checked+.toggle-track{background:var(--ac)}
+.toggle-thumb{position:absolute;top:1px;left:1px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle input:checked~.toggle-thumb{transform:translateX(13px)}
+/* interactive preview words */
+#ps text{cursor:pointer;transition:opacity .08s}
+#ps text:hover{opacity:.65}
+#ps text.pv-sel{stroke:#e94560;stroke-width:1.5px;paint-order:stroke fill}
+#ps text.pv-hover{stroke:rgba(233,69,96,.35);stroke-width:1px;paint-order:stroke fill}
+.tier-popup{position:fixed;background:var(--sf);border:1px solid var(--ac);border-radius:5px;padding:5px 8px;font-size:.68rem;color:var(--tx);z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;white-space:nowrap}
+.tier-popup .tier-num{font-size:.95rem;font-weight:800;color:var(--ac);margin-right:3px}
+/* context menu */
+.ctx-menu{position:fixed;background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:4px 0;z-index:300;display:none;box-shadow:0 6px 24px rgba(0,0,0,.6);min-width:160px}
+.ctx-item{padding:5px 14px;font-size:.72rem;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s}
+.ctx-item:hover{background:rgba(233,69,96,.15)}
+.ctx-item.disabled{opacity:.35;pointer-events:none}
+.ctx-sep{height:1px;background:var(--bd);margin:3px 0}
+.ctx-icon{width:14px;text-align:center;font-size:.7rem;flex-shrink:0}
+/* drag handles overlay */
+.drag-handles{position:absolute;pointer-events:none;z-index:150}
+.drag-handle{position:absolute;width:8px;height:8px;background:var(--ac);border:1.5px solid #fff;border-radius:50%;pointer-events:all;cursor:nwse-resize;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.drag-handle.h-tl{cursor:nwse-resize}.drag-handle.h-tr{cursor:nesw-resize}
+.drag-handle.h-bl{cursor:nesw-resize}.drag-handle.h-br{cursor:nwse-resize}
+.drag-handle.h-mr{cursor:ew-resize}
+.sel-box{position:absolute;border:1.5px solid var(--ac);background:rgba(233,69,96,.06);pointer-events:none;border-radius:2px}
+/* preview */
+.pv{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;background:#0a0a15;position:relative;overflow:auto}
+.pvb{background:#fff;border-radius:6px;padding:6px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+.pc{position:absolute;bottom:8px;display:flex;gap:3px}
+.pc .btn{width:auto;padding:3px 10px;font-size:.64rem}
+.note{background:rgba(233,69,96,.06);border:1px solid rgba(233,69,96,.15);border-radius:4px;padding:5px;font-size:.6rem;color:var(--dm);line-height:1.25;margin-top:5px}
+.status{font-size:.66rem;color:var(--dm);margin-top:2px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="side">
+<h1>Text Shape Cutter</h1>
+<p class="sub">Readable text forms the shape &mdash; no clipping, laser-cut ready</p>
+
+<div class="s">
+  <div class="st">Passage</div>
+  <textarea id="txtIn">Our Father, who art in heaven, hallowed be thy name. Thy kingdom come, thy will be done, on earth as it is in heaven. Give us this day our daily bread, and forgive us our trespasses, as we forgive those who trespass against us, and lead us not into temptation, but deliver us from evil. Amen.</textarea>
+  <div style="display:flex;gap:2px;margin-top:2px">
+    <button class="btn btn-s btn-sm" onclick="parseWords()">Parse</button>
+    <button class="btn btn-s btn-sm" onclick="autoEm()">Auto-Emphasis</button>
+    <button class="btn btn-s btn-sm" onclick="resetEm()">Reset All</button>
+  </div>
+</div>
+
+<div class="s">
+  <div class="st">Word Emphasis <span style="font-size:.5rem">(click=cycle tier, shift=multi)</span></div>
+  <div class="wl" id="wl"></div>
+  <div style="display:flex;gap:2px;margin-top:2px;flex-wrap:wrap">
+    <button class="tb" onclick="bulkT(1)">Tiny</button>
+    <button class="tb" onclick="bulkT(2)">Small</button>
+    <button class="tb" onclick="bulkT(4)">Normal</button>
+    <button class="tb" onclick="bulkT(6)">Large</button>
+    <button class="tb" onclick="bulkT(7)">Hero</button>
+    <button class="tb" onclick="sel.clear();renderC()">Deselect</button>
+  </div>
+  <div style="display:flex;gap:2px;margin-top:3px;flex-wrap:wrap">
+    <button class="tb act" onclick="fitToLine()" title="Force selected words onto one line together">Fit to Line</button>
+    <button class="tb act" onclick="stackToLines()" title="Stack selected words vertically in one slot">Stack</button>
+    <button class="tb" onclick="unstack()" title="Remove stack from selected words">Unstack</button>
+    <button class="tb" onclick="clearBreaks()" title="Remove all line/stack markers">Clear All</button>
+  </div>
+  <p class="hint">Fit to Line = words share one line. Stack = words pile vertically in one slot, same width, split height.</p>
+</div>
+
+<div class="s">
+  <div class="st">Shape</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap" id="shapeBar">
+    <button class="tb" style="padding:3px 8px" data-shape="cross" onclick="pickShape(this)"><b>&#10010;</b> Cross</button>
+    <button class="tb" style="padding:3px 8px" data-shape="heart" onclick="pickShape(this)">&#9829; Heart</button>
+    <button class="tb" style="padding:3px 8px" data-shape="circle" onclick="pickShape(this)">&#9679; Circle</button>
+    <button class="tb" style="padding:3px 8px" data-shape="diamond" onclick="pickShape(this)">&#9670; Diamond</button>
+    <button class="tb" style="padding:3px 8px" data-shape="shield" onclick="pickShape(this)">&#9930; Shield</button>
+    <button class="tb" style="padding:3px 8px" data-shape="oval" onclick="pickShape(this)">&#11044; Oval</button>
+  </div>
+  <div style="display:flex;gap:2px;margin-top:3px;align-items:center">
+    <button class="tb" onclick="document.getElementById('svgFile').click()" title="Upload an SVG file as a custom shape">+ Import SVG Shape</button>
+    <button class="tb" onclick="deleteCustomShape()" title="Delete selected custom shape">&#128465;</button>
+    <input type="file" id="svgFile" accept=".svg" style="display:none" onchange="importSvgShape(this)">
+  </div>
+  <p class="hint">Import any SVG silhouette as a custom shape. The filled area becomes the text boundary.</p>
+</div>
+
+<div class="s">
+  <div class="st">Dimensions &amp; Cross Proportions</div>
+  <div class="row">
+    <div><label>Width</label><input type="number" id="svgW" value="600" min="200" max="2000" step="50"></div>
+    <div><label>Height</label><input type="number" id="svgH" value="900" min="200" max="2000" step="50"></div>
+  </div>
+  <div class="row" style="margin-top:4px">
+    <div><label>Arm width %</label><input type="number" id="armW" value="32" min="15" max="60"></div>
+    <div><label>Bar height %</label><input type="number" id="barH" value="22" min="10" max="45"></div>
+  </div>
+  <div class="row" style="margin-top:4px">
+    <div><label>Bar position % from top</label><input type="number" id="barPos" value="30" min="15" max="50"></div>
+    <div><label>Inner padding</label><input type="number" id="pad" value="2" min="0" max="15"></div>
+  </div>
+</div>
+
+<div class="s">
+  <div class="st">Typography</div>
+  <label>Font</label>
+  <select id="font">
+    <optgroup label="Dense / Condensed">
+      <option value="Impact" selected>Impact</option>
+      <option value="Anton">Anton</option>
+      <option value="'Bebas Neue'">Bebas Neue</option>
+      <option value="Teko">Teko</option>
+      <option value="Oswald">Oswald</option>
+      <option value="Staatliches">Staatliches</option>
+      <option value="'Passion One'">Passion One</option>
+    </optgroup>
+    <optgroup label="Bold / Heavy">
+      <option value="'Arial Black'">Arial Black</option>
+      <option value="'Russo One'">Russo One</option>
+      <option value="Bungee">Bungee</option>
+      <option value="'Black Ops One'">Black Ops One</option>
+    </optgroup>
+    <optgroup label="Stencil (laser safe)">
+      <option value="'Allerta Stencil'">Allerta Stencil</option>
+      <option value="'Stardos Stencil'">Stardos Stencil</option>
+      <option value="'Saira Stencil One'">Saira Stencil One</option>
+    </optgroup>
+    <optgroup label="Handwritten / Display">
+      <option value="'Permanent Marker'">Permanent Marker</option>
+    </optgroup>
+    <optgroup label="System">
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Verdana">Verdana</option>
+      <option value="'Times New Roman'">Times New Roman</option>
+      <option value="'Courier New'">Courier New</option>
+    </optgroup>
+  </select>
+  <div class="row" style="margin-top:4px">
+    <div><label>Vertical tightness</label><input type="range" id="vTight" min="70" max="100" value="82"><div class="hint" id="vTightVal">0.82</div></div>
+    <div><label>Letter spacing (em)</label><input type="range" id="lSpace" min="-8" max="2" value="-2"><div class="hint" id="lSpaceVal">-0.02</div></div>
+  </div>
+</div>
+
+<div class="s">
+  <div class="st">Options</div>
+  <div class="toggle-row"><label style="margin:0">All uppercase</label><label class="toggle"><input type="checkbox" id="caps" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+  <div class="toggle-row"><label style="margin:0">Bold all text</label><label class="toggle"><input type="checkbox" id="boldAll" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+  <div class="toggle-row"><label style="margin:0">Show shape outline (guide)</label><label class="toggle"><input type="checkbox" id="outline"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+  <div style="margin-top:3px">
+    <label>Line separator symbol</label>
+    <select id="lineSep" style="width:auto;display:inline-block">
+      <option value="">None</option>
+      <option value="·">· Centered dot</option>
+      <option value="—">— Em dash</option>
+      <option value="–">– En dash</option>
+      <option value="-">- Hyphen</option>
+      <option value="•">• Bullet</option>
+      <option value="✦">✦ Star</option>
+      <option value="†">† Dagger</option>
+      <option value="◆">◆ Diamond</option>
+      <option value="∞">∞ Infinity</option>
+    </select>
+  </div>
+</div>
+
+<div class="s">
+  <div class="st">Color</div>
+  <div style="display:flex;gap:5px;align-items:center">
+    <input type="color" id="color" value="#000000" style="width:26px;height:22px;padding:0;border-radius:3px">
+    <span style="font-size:.66rem;color:var(--dm)">Text color</span>
+  </div>
+</div>
+
+<div class="s">
+  <button class="btn btn-p" onclick="generate()">Generate Preview</button>
+  <button class="btn btn-s" onclick="doExport()">Export Text SVG (editable)</button>
+  <button class="btn btn-p" style="margin-top:4px;background:#2a9d8f" onclick="exportLaserSVG()">&#9000; Export Laser-Cut SVG</button>
+  <div class="row" style="margin-top:3px">
+    <div><label>Bridge thickness</label><input type="number" id="bridgeW" value="2" min="0.5" max="8" step="0.5"></div>
+    <div><label>Trace resolution</label><select id="traceRes"><option value="2">2x (fast)</option><option value="3" selected>3x (good)</option><option value="4">4x (best)</option></select></div>
+  </div>
+  <div class="toggle-row" style="margin-top:2px"><label style="margin:0">Fill letter counters (O,A,D..)</label><label class="toggle"><input type="checkbox" id="fillCounters"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+  <div class="status" id="status"></div>
+</div>
+
+<div class="s">
+  <div class="st">Undo / Save / Load</div>
+  <div style="display:flex;gap:2px;flex-wrap:wrap">
+    <button class="tb" onclick="doUndo()" id="undoBtn" title="Ctrl+Z">&#8630; Undo</button>
+    <button class="tb" onclick="doRedo()" id="redoBtn" title="Ctrl+Y">&#8631; Redo</button>
+    <button class="tb" onclick="saveProject()">&#128190; Save</button>
+    <button class="tb" onclick="document.getElementById('loadFile').click()">&#128194; Load</button>
+    <button class="tb" onclick="resetToDefaults()" title="Reset everything to factory defaults">&#8634; Defaults</button>
+  </div>
+  <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadProject(this)">
+  <div class="hint" id="undoStatus">No history</div>
+</div>
+
+<div class="note">
+  <b>How it works:</b> Every line is <em>sized</em> to fill the shape width — no clipping.
+  Words touch (zero/negative spacing) so laser-cut pieces stay connected.
+  Use a stencil font or weld paths in Inkscape to handle letter holes (O, A, D, etc.).
+  <br><b>Autosave:</b> Your work is saved to browser storage automatically.
+</div>
+</div>
+
+<!-- PREVIEW -->
+<div class="pv">
+  <div class="pvb" id="pvB"></div>
+  <div class="pc">
+    <button class="btn btn-s" onclick="zm=Math.min(zm*1.25,5);aZ()">+</button>
+    <button class="btn btn-s" onclick="zm=Math.max(zm/1.25,.15);aZ()">&minus;</button>
+    <button class="btn btn-s" onclick="zm=1;aZ()">1:1</button>
+  </div>
+</div>
+</div>
+
+<div class="tier-popup" id="tierPop"><span class="tier-num"></span><span class="tier-label"></span></div>
+<!-- Context menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" data-act="tier7"><span class="ctx-icon">7</span>Hero</div>
+  <div class="ctx-item" data-act="tier6"><span class="ctx-icon">6</span>Large</div>
+  <div class="ctx-item" data-act="tier5"><span class="ctx-icon">5</span>Medium</div>
+  <div class="ctx-item" data-act="tier4"><span class="ctx-icon">4</span>Normal</div>
+  <div class="ctx-item" data-act="tier2"><span class="ctx-icon">2</span>Small</div>
+  <div class="ctx-item" data-act="tier1"><span class="ctx-icon">1</span>Tiny</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" data-act="fitline"><span class="ctx-icon">&#8596;</span>Fit to Line</div>
+  <div class="ctx-item" data-act="stack"><span class="ctx-icon">&#8597;</span>Stack</div>
+  <div class="ctx-item" data-act="unstack"><span class="ctx-icon">&#10005;</span>Unstack</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" data-act="selall"><span class="ctx-icon">&#9634;</span>Select All</div>
+  <div class="ctx-item" data-act="desel"><span class="ctx-icon">&#9633;</span>Deselect</div>
+</div>
+<!-- Drag handles overlay (positioned over the SVG preview) -->
+<div class="drag-handles" id="dragHandles"></div>
+<canvas id="mc" style="display:none"></canvas>
+<canvas id="shapeRasterCanvas" style="display:none"></canvas>
+<canvas id="laserCanvas" style="display:none"></canvas>
+<!-- Potrace: bitmap to vector tracing (Peter Selinger's algorithm, JS port) -->
+<script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
+
+<script>
+// ===================== STATE =====================
+let curS='cross',zm=1,svgO=null,WD=[],sel=new Set();
+let nextStackId=1;
+let suppressGen=false;
+let lastLayout=null; // store last layout result for laser export
+
+const TM=[0, 0.20, 0.35, 0.55, 1.00, 1.60, 2.80, 5.00];
+
+// ===================== UNDO / REDO =====================
+const undoStack=[];
+const redoStack=[];
+const MAX_UNDO=80;
+
+// Capture full state snapshot
+function captureState(){
+  return JSON.stringify({
+    WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep})),
+    curS,
+    nextStackId,
+    settings:getSettings()
+  });
+}
+
+function getSettings(){
+  return {
+    svgW:gv('svgW'),svgH:gv('svgH'),armW:gv('armW'),barH:gv('barH'),barPos:gv('barPos'),
+    pad:gv('pad'),font:document.getElementById('font').value,
+    vTight:gv('vTight'),lSpace:gv('lSpace'),
+    caps:document.getElementById('caps').checked,
+    boldAll:document.getElementById('boldAll').checked,
+    outline:document.getElementById('outline').checked,
+    color:document.getElementById('color').value,
+    text:document.getElementById('txtIn').value
+  };
+}
+function gv(id){return document.getElementById(id).value}
+
+function applySettings(s){
+  if(!s)return;
+  if(s.svgW)document.getElementById('svgW').value=s.svgW;
+  if(s.svgH)document.getElementById('svgH').value=s.svgH;
+  if(s.armW)document.getElementById('armW').value=s.armW;
+  if(s.barH)document.getElementById('barH').value=s.barH;
+  if(s.barPos)document.getElementById('barPos').value=s.barPos;
+  if(s.pad!=null)document.getElementById('pad').value=s.pad;
+  if(s.font)document.getElementById('font').value=s.font;
+  if(s.vTight)document.getElementById('vTight').value=s.vTight;
+  if(s.lSpace!=null)document.getElementById('lSpace').value=s.lSpace;
+  if(s.caps!=null)document.getElementById('caps').checked=s.caps;
+  if(s.boldAll!=null)document.getElementById('boldAll').checked=s.boldAll;
+  if(s.outline!=null)document.getElementById('outline').checked=s.outline;
+  if(s.color)document.getElementById('color').value=s.color;
+  if(s.text)document.getElementById('txtIn').value=s.text;
+  // Update slider labels
+  document.getElementById('vTightVal').textContent=(parseInt(document.getElementById('vTight').value)/100).toFixed(2);
+  document.getElementById('lSpaceVal').textContent=(parseInt(document.getElementById('lSpace').value)/100).toFixed(2)+'em';
+}
+
+// Push current state to undo stack (call BEFORE making changes)
+function pushUndo(){
+  undoStack.push(captureState());
+  if(undoStack.length>MAX_UNDO)undoStack.shift();
+  redoStack.length=0; // clear redo on new action
+  updateUndoUI();
+  autoSave();
+}
+
+function doUndo(){
+  if(undoStack.length===0)return;
+  redoStack.push(captureState());
+  const prev=JSON.parse(undoStack.pop());
+  restoreState(prev);
+  updateUndoUI();
+}
+
+function doRedo(){
+  if(redoStack.length===0)return;
+  undoStack.push(captureState());
+  const next=JSON.parse(redoStack.pop());
+  restoreState(next);
+  updateUndoUI();
+}
+
+function restoreState(state){
+  WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep}));
+  if(state.curS){curS=state.curS;
+    document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
+    const sb=document.querySelector(`[data-shape="${curS}"]`);
+    if(sb){sb.style.borderColor='var(--ac)';sb.style.background='rgba(233,69,96,.15)'}
+  }
+  if(state.nextStackId)nextStackId=state.nextStackId;
+  applySettings(state.settings);
+  sel.clear();
+  renderC();
+  generate();
+}
+
+function updateUndoUI(){
+  const u=document.getElementById('undoBtn');
+  const r=document.getElementById('redoBtn');
+  if(u)u.style.opacity=undoStack.length?'1':'.35';
+  if(r)r.style.opacity=redoStack.length?'1':'.35';
+  const s=document.getElementById('undoStatus');
+  if(s)s.textContent=`Undo: ${undoStack.length} · Redo: ${redoStack.length}`;
+}
+
+// Reset everything to factory defaults
+const DEFAULTS={
+  txtIn:`Our Father, who art in heaven, hallowed be thy name. Thy kingdom come, thy will be done, on earth as it is in heaven. Give us this day our daily bread, and forgive us our trespasses, as we forgive those who trespass against us, and lead us not into temptation, but deliver us from evil. Amen.`,
+  svgW:'600',svgH:'900',armW:'32',barH:'22',barPos:'30',pad:'2',
+  font:'Impact',vTight:'82',lSpace:'-2',
+  caps:true,boldAll:true,outline:false,
+  color:'#000000',lineSep:'',
+  bridgeW:'2',traceRes:'3',fillCounters:false,
+  shape:'cross'
+};
+
+function resetToDefaults(){
+  if(!confirm('Reset all settings, text, and word styling to defaults?'))return;
+  pushUndo();
+  // Text
+  document.getElementById('txtIn').value=DEFAULTS.txtIn;
+  // Dimensions & cross
+  document.getElementById('svgW').value=DEFAULTS.svgW;
+  document.getElementById('svgH').value=DEFAULTS.svgH;
+  document.getElementById('armW').value=DEFAULTS.armW;
+  document.getElementById('barH').value=DEFAULTS.barH;
+  document.getElementById('barPos').value=DEFAULTS.barPos;
+  document.getElementById('pad').value=DEFAULTS.pad;
+  // Font & spacing
+  document.getElementById('font').value=DEFAULTS.font;
+  document.getElementById('vTight').value=DEFAULTS.vTight;
+  document.getElementById('vTightVal').textContent=(DEFAULTS.vTight/100).toFixed(2);
+  document.getElementById('lSpace').value=DEFAULTS.lSpace;
+  document.getElementById('lSpaceVal').textContent=(DEFAULTS.lSpace/100).toFixed(2)+'em';
+  // Toggles
+  document.getElementById('caps').checked=DEFAULTS.caps;
+  document.getElementById('boldAll').checked=DEFAULTS.boldAll;
+  document.getElementById('outline').checked=DEFAULTS.outline;
+  // Color
+  document.getElementById('color').value=DEFAULTS.color;
+  // Separator
+  document.getElementById('lineSep').value=DEFAULTS.lineSep;
+  // Laser options
+  document.getElementById('bridgeW').value=DEFAULTS.bridgeW;
+  document.getElementById('traceRes').value=DEFAULTS.traceRes;
+  document.getElementById('fillCounters').checked=DEFAULTS.fillCounters;
+  // Shape
+  curS=DEFAULTS.shape;
+  document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
+  const sb=document.querySelector(`[data-shape="${curS}"]`);
+  if(sb){sb.style.borderColor='var(--ac)';sb.style.background='rgba(233,69,96,.15)'}
+  // Clear autosave
+  try{localStorage.removeItem(AUTOSAVE_KEY)}catch(e){}
+  // Reset undo/redo
+  undoStack.length=0;redoStack.length=0;
+  // Re-parse and auto-emphasis
+  sel.clear();
+  suppressGen=true;
+  parseWords();autoEm();
+  suppressGen=false;
+  generate();
+  updateUndoUI();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();doUndo()}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();doRedo()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveProject()}
+});
+
+// ===================== SAVE / LOAD =====================
+function saveProject(){
+  const state={
+    version:1,
+    timestamp:new Date().toISOString(),
+    WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep})),
+    curS,
+    nextStackId,
+    settings:getSettings()
+  };
+  const json=JSON.stringify(state,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`text-shape-${curS}-${Date.now()}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function loadProject(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const state=JSON.parse(e.target.result);
+      if(!state.WD||!Array.isArray(state.WD)){alert('Invalid file');return}
+      pushUndo(); // save current state before loading
+      WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep}));
+      if(state.curS){curS=state.curS;
+        document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
+        const sb=document.querySelector(`[data-shape="${curS}"]`);
+        if(sb){sb.style.borderColor='var(--ac)';sb.style.background='rgba(233,69,96,.15)'}
+      }
+      if(state.nextStackId)nextStackId=state.nextStackId;
+      applySettings(state.settings);
+      sel.clear();
+      renderC();
+      generate();
+    }catch(err){alert('Failed to load: '+err.message)}
+  };
+  reader.readAsText(file);
+  input.value=''; // reset so same file can be reloaded
+}
+
+// ===================== AUTOSAVE (localStorage) =====================
+const AUTOSAVE_KEY='textShapeCutter_autosave';
+let autoSaveTimer=null;
+
+function autoSave(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>{
+    try{
+      const state={
+        version:1,
+        WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep})),
+        curS,nextStackId,
+        settings:getSettings()
+      };
+      localStorage.setItem(AUTOSAVE_KEY,JSON.stringify(state));
+    }catch(e){}
+  },500);
+}
+
+function loadAutoSave(){
+  try{
+    const raw=localStorage.getItem(AUTOSAVE_KEY);
+    if(!raw)return false;
+    const state=JSON.parse(raw);
+    if(!state.WD||!Array.isArray(state.WD)||state.WD.length===0)return false;
+    WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep}));
+    if(state.curS)curS=state.curS;
+    if(state.nextStackId)nextStackId=state.nextStackId;
+    applySettings(state.settings);
+    // Highlight the correct shape button
+    document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
+    const sb=document.querySelector(`[data-shape="${curS}"]`);
+    if(sb){sb.style.borderColor='var(--ac)';sb.style.background='rgba(233,69,96,.15)'}
+    renderC();
+    return true;
+  }catch(e){return false}
+}
+
+// ===================== UI HELPERS =====================
+document.getElementById('vTight').oninput=function(){document.getElementById('vTightVal').textContent=(this.value/100).toFixed(2)};
+document.getElementById('lSpace').oninput=function(){document.getElementById('lSpaceVal').textContent=(this.value/100).toFixed(2)+'em'};
+
+function pickShape(el){
+  document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
+  el.style.borderColor='var(--ac)';el.style.background='rgba(233,69,96,.15)';
+  curS=el.dataset.shape;
+}
+// Highlight default
+document.querySelector('[data-shape="cross"]').click();
+
+function aZ(){const s=document.getElementById('ps');if(s){s.style.transform=`scale(${zm})`;s.style.transformOrigin='top center'}}
+
+// ===================== CUSTOM SVG SHAPES =====================
+const CUSTOM_SHAPES_KEY='textShapeCutter_customShapes';
+// customShapes: {id: {name, svgMarkup, rowCache:{[whKey]: {rows}}}}
+let customShapes={};
+
+function loadCustomShapes(){
+  try{
+    const raw=localStorage.getItem(CUSTOM_SHAPES_KEY);
+    if(raw)customShapes=JSON.parse(raw);
+  }catch(e){}
+  rebuildShapeButtons();
+}
+
+function saveCustomShapes(){
+  // Strip rowCache before saving (it's large and regenerated on use)
+  const slim={};
+  for(const[id,s]of Object.entries(customShapes)){
+    slim[id]={name:s.name,svgMarkup:s.svgMarkup};
+  }
+  try{localStorage.setItem(CUSTOM_SHAPES_KEY,JSON.stringify(slim))}catch(e){}
+}
+
+function rebuildShapeButtons(){
+  const bar=document.getElementById('shapeBar');
+  // Remove existing custom buttons
+  bar.querySelectorAll('[data-custom]').forEach(b=>b.remove());
+  // Add custom shape buttons
+  for(const[id,s]of Object.entries(customShapes)){
+    const btn=document.createElement('button');
+    btn.className='tb';
+    btn.style.padding='3px 8px';
+    btn.dataset.shape='custom:'+id;
+    btn.dataset.custom='1';
+    btn.textContent='\u2B23 '+s.name;
+    btn.onclick=function(){pickShape(this)};
+    bar.appendChild(btn);
+  }
+}
+
+function importSvgShape(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const svgText=e.target.result;
+    const name=file.name.replace(/\.svg$/i,'').substring(0,20);
+    const id='c'+Date.now();
+    customShapes[id]={name,svgMarkup:svgText};
+    saveCustomShapes();
+    rebuildShapeButtons();
+    // Auto-select the new shape
+    const btn=document.querySelector(`[data-shape="custom:${id}"]`);
+    if(btn)pickShape(btn);
+    generate();
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+function deleteCustomShape(){
+  if(!curS.startsWith('custom:'))return;
+  const id=curS.split(':')[1];
+  if(!customShapes[id])return;
+  const name=customShapes[id].name;
+  if(!confirm(`Delete custom shape "${name}"?`))return;
+  delete customShapes[id];
+  saveCustomShapes();
+  rebuildShapeButtons();
+  // Switch back to cross
+  curS='cross';
+  const btn=document.querySelector('[data-shape="cross"]');
+  if(btn)pickShape(btn);
+  generate();
+}
+
+// Rasterize an SVG to a canvas and scan each row for left/right pixel boundaries.
+// Returns a row lookup: Map<y, {l, r}> cached for the given W×H.
+function rasterizeSvgToRows(svgMarkup,W,H){
+  return new Promise(resolve=>{
+    const canvas=document.getElementById('shapeRasterCanvas');
+    canvas.width=W;canvas.height=H;
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+
+    const img=new Image();
+    // Convert SVG markup to a data URL
+    // Inject width/height into the SVG if not present
+    let svg=svgMarkup;
+    // Replace or add width/height attributes to make it fill our canvas
+    svg=svg.replace(/<svg([^>]*)>/,(match,attrs)=>{
+      // Remove existing width/height/viewBox and set our own
+      let cleaned=attrs.replace(/\s*(width|height)="[^"]*"/g,'');
+      // Try to preserve viewBox; if none, add one
+      if(!/viewBox/.test(cleaned)){
+        cleaned+=` viewBox="0 0 ${W} ${H}"`;
+      }
+      return`<svg${cleaned} width="${W}" height="${H}">`;
+    });
+
+    const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+
+    img.onload=()=>{
+      ctx.drawImage(img,0,0,W,H);
+      URL.revokeObjectURL(url);
+
+      // Scan each row for leftmost and rightmost non-transparent pixel
+      const imageData=ctx.getImageData(0,0,W,H);
+      const rows=new Map();
+      for(let y=0;y<H;y++){
+        let left=-1,right=-1;
+        for(let x=0;x<W;x++){
+          const alpha=imageData.data[(y*W+x)*4+3];
+          if(alpha>30){
+            if(left<0)left=x;
+            right=x;
+          }
+        }
+        if(left>=0)rows.set(y,{l:left,r:right+1});
+      }
+      resolve(rows);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(new Map())};
+    img.src=url;
+  });
+}
+
+// Cache for rasterized custom shape rows, keyed by "id:W:H"
+let customRowCache={};
+
+async function getCustomShapeRows(id,W,H){
+  const key=`${id}:${W}:${H}`;
+  if(customRowCache[key])return customRowCache[key];
+  const shape=customShapes[id];
+  if(!shape)return new Map();
+  const rows=await rasterizeSvgToRows(shape.svgMarkup,W,H);
+  customRowCache[key]=rows;
+  return rows;
+}
+
+// ===================== WORDS =====================
+function parseWords(){
+  pushUndo();
+  const raw=document.getElementById('txtIn').value;
+  const c=document.getElementById('caps').checked;
+  const lineSep=document.getElementById('lineSep').value;
+
+  // Split by newlines first, then by spaces within each line.
+  // Newlines in the source text become separator tokens.
+  const srcLines=raw.split(/\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  WD=[];
+  for(let li=0;li<srcLines.length;li++){
+    const words=srcLines[li].split(/\s+/).filter(x=>x);
+    for(const w of words){
+      WD.push({text:c?w.toUpperCase():w,tier:4,lb:null,stackId:null,isSep:false});
+    }
+    // Insert a separator token between source lines (not after the last)
+    if(lineSep&&li<srcLines.length-1){
+      WD.push({text:lineSep,tier:3,lb:'break',stackId:null,isSep:true});
+      // Also force break on the word before the separator
+      if(WD.length>=2)WD[WD.length-2].lb='break';
+    }
+  }
+  nextStackId=1;
+  renderC();generate();
+}
+
+function autoEm(){
+  if(!WD.length){parseWords();return;}
+  pushUndo();
+  const T7=/^(HEAVEN|AMEN|FATHER|GOD|LORD|JESUS|CHRIST|EVIL)$/i;
+  const T6=/^(HALLOWED|KINGDOM|FORGIVE|DELIVER|BREAD|EARTH|TRESPASSES?|TEMPTATION|POWER|NAME|COME|GLORY|SALVATION|PEACE|FAITH|HOPE|GRACE)$/i;
+  const T5=/^(WILL|DONE|GIVE|LEAD|DAILY|FOREVER|HOLY|SPIRIT|PRAYER)$/i;
+  const T2=/^(WHO|ART|BE|THY|ON|AS|IT|IS|NOT|BUT|FOR|AND|THE|A|AN|US|WE|IN|AT|TO|OF|BY|THIS|DAY|THOSE|AGAINST|FROM|THINE|EVER|INTO|WITH|THAT|OR|ITS|OUR)$/i;
+  for(const w of WD){
+    if(w.isSep)continue; // don't change separator tokens
+    const c=w.text.replace(/[^A-Za-z]/g,'');
+    if(T7.test(c))w.tier=7;
+    else if(T6.test(c))w.tier=6;
+    else if(T5.test(c))w.tier=5;
+    else if(T2.test(c))w.tier=2;
+    else w.tier=4;
+  }
+  // First word "OUR" should be prominent
+  if(WD.length&&WD[0].text.replace(/[^A-Za-z]/g,'').toUpperCase()==='OUR')WD[0].tier=6;
+  renderC();generate();
+}
+
+function resetEm(){pushUndo();WD.forEach(w=>w.tier=4);renderC();generate();}
+
+// Stack group color hues for visual distinction
+const STACK_HUES=['#f0c040','#40c0f0','#f06080','#80f060','#c060f0','#f0a040'];
+function stackColor(id){return STACK_HUES[(id-1)%STACK_HUES.length]}
+
+function renderC(){
+  const el=document.getElementById('wl');el.innerHTML='';
+  WD.forEach((w,i)=>{
+    const c=document.createElement('span');
+    let cls=`wc t${w.tier}`;
+    if(sel.has(i))cls+=' sel';
+    if(w.lb==='fit')cls+=' has-lb';
+    if(w.lb==='break'&&!w.isSep)cls+=' has-stack';
+    if(w.isSep)c.style.cssText='background:#333;color:var(--ac);font-size:.7rem;opacity:.7';
+    c.className=cls;
+    c.textContent=w.isSep?`[${w.text}]`:w.text;
+    let title=`tier ${w.tier} (${TM[w.tier]}x)`;
+    if(w.lb)title+=` [${w.lb}]`;
+    if(w.stackId)title+=` [stack ${w.stackId}]`;
+    c.title=title;
+    // Stack group indicator: colored bottom border
+    if(w.stackId){
+      c.style.borderBottom=`2px solid ${stackColor(w.stackId)}`;
+    }
+    c.onclick=e=>{
+      if(e.shiftKey){sel.has(i)?sel.delete(i):sel.add(i);renderC()}
+      else{pushUndo();w.tier=w.tier%7+1;sel.clear();sel.add(i);renderC();generate()}
+    };
+    el.appendChild(c);
+    // Show stack connector between stacked words
+    if(w.stackId){
+      const nextW=WD[i+1];
+      if(nextW&&nextW.stackId===w.stackId){
+        const m=document.createElement('span');
+        m.className='lb-mark';
+        m.style.color=stackColor(w.stackId);
+        m.textContent='\u2195'; // up-down arrow
+        el.appendChild(m);
+      }
+    }
+    // Show line-break marker after this word
+    if(w.lb==='break'){
+      const m=document.createElement('span');m.className='lb-mark stack';m.textContent='\\n';el.appendChild(m);
+    } else if(w.lb==='fit'){
+      const m=document.createElement('span');m.className='lb-mark';m.textContent='\u2014';el.appendChild(m);
+    }
+  });
+}
+function bulkT(t){pushUndo();(sel.size?[...sel]:WD.map((_,i)=>i)).forEach(i=>WD[i].tier=t);renderC();generate();}
+
+// Fit to Line: selected contiguous words forced onto one line
+function fitToLine(){
+  if(sel.size<2)return;
+  pushUndo();
+  const indices=[...sel].sort((a,b)=>a-b);
+  for(const i of indices)WD[i].lb=null;
+  for(let k=0;k<indices.length-1;k++) WD[indices[k]].lb='fit';
+  WD[indices[indices.length-1]].lb='break';
+  if(indices[0]>0&&WD[indices[0]-1].lb!=='break') WD[indices[0]-1].lb='break';
+  renderC();generate();
+}
+
+// Stack: selected consecutive words stacked vertically in one slot.
+// Combined height = tallest non-stacked word on the same line.
+function stackToLines(){
+  if(sel.size<2)return;
+  pushUndo();
+  const indices=[...sel].sort((a,b)=>a-b);
+  for(let k=1;k<indices.length;k++){
+    if(indices[k]!==indices[k-1]+1){alert('Stack requires consecutive words.');return;}
+  }
+  const id=nextStackId++;
+  for(const i of indices)WD[i].stackId=id;
+  renderC();generate();
+}
+
+function clearBreaks(){
+  pushUndo();
+  for(const w of WD){w.lb=null;w.stackId=null;}
+  renderC();generate();
+}
+
+function unstack(){
+  if(sel.size<1)return;
+  pushUndo();
+  for(const i of sel)WD[i].stackId=null;
+  renderC();generate();
+}
+
+// ===================== SHAPE ROW FUNCTIONS =====================
+// Returns function: y => {l, r} | null
+// For custom shapes, call prepareCustomShape() first to populate the cache.
+function getShapeRowFn(shape,W,H){
+  // Custom SVG shape: use rasterized row cache
+  if(shape.startsWith('custom:')){
+    const id=shape.split(':')[1];
+    const key=`${id}:${W}:${H}`;
+    const rows=customRowCache[key];
+    if(!rows)return y=>null; // not rasterized yet
+    return y=>{
+      // Check a few rows around y for a wider result (anti-alias tolerance)
+      const ry=Math.round(y);
+      return rows.get(ry)||rows.get(ry+1)||rows.get(ry-1)||null;
+    };
+  }
+  const P=2; // minimal outer padding
+  switch(shape){
+    case'cross':{
+      const armR=parseInt(document.getElementById('armW').value)/100;
+      const barR=parseInt(document.getElementById('barH').value)/100;
+      const barP=parseInt(document.getElementById('barPos').value)/100;
+      const cx=W/2;
+      const armL=cx-W*armR/2, armRx=cx+W*armR/2;
+      const barTop=H*barP-H*barR/2, barBot=H*barP+H*barR/2;
+      return y=>{
+        if(y<P||y>H-P)return null;
+        if(y>=barTop&&y<=barBot)return{l:P,r:W-P};
+        return{l:armL,r:armRx};
+      };
+    }
+    case'heart':{
+      const cx=W/2,cy=H/2,iw=W-P*2,ih=H-P*2;
+      const pts=[];for(let a=0;a<Math.PI*2;a+=.008){
+        const x=16*Math.pow(Math.sin(a),3);
+        const y=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
+        pts.push([cx+x*iw/36,cy+y*ih/36-ih*.06]);
+      }
+      return y=>rpoly(y,pts);
+    }
+    case'circle':{
+      const cx=W/2,cy=H/2,R=Math.min(W,H)/2-P;
+      return y=>{const d=y-cy;if(Math.abs(d)>=R)return null;const dx=Math.sqrt(R*R-d*d);return{l:cx-dx,r:cx+dx}};
+    }
+    case'diamond':{
+      const cx=W/2,cy=H/2;
+      const pts=[[cx,P],[W-P,cy],[cx,H-P],[P,cy]];
+      return y=>rpoly(y,pts);
+    }
+    case'shield':{
+      const cx=W/2,cy=H/2,iw=W-P*2,ih=H-P*2;
+      const my=cy+ih*.1;
+      const pts=[[P,P],[W-P,P]];
+      for(let i=0;i<=40;i++){const t=i/40;pts.push([W-P-(W-P-cx)*t,my+(H-P-my)*Math.pow(t,.8)])}
+      for(let i=40;i>=0;i--){const t=i/40;pts.push([P+(cx-P)*t,my+(H-P-my)*Math.pow(t,.8)])}
+      return y=>rpoly(y,pts);
+    }
+    case'oval':{
+      const cx=W/2,cy=H/2,rx=(W-P*2)/2,ry=(H-P*2)/2*.65;
+      return y=>{const d=(y-cy)/ry;if(Math.abs(d)>=1)return null;const dx=rx*Math.sqrt(1-d*d);return{l:cx-dx,r:cx+dx}};
+    }
+    default:return getShapeRowFn('cross',W,H);
+  }
+}
+
+function rpoly(y,pts){
+  const xs=[];for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const yi=pts[i][1],yj=pts[j][1];
+    if((yi>y)!==(yj>y))xs.push(pts[i][0]+(y-yi)/(yj-yi)*(pts[j][0]-pts[i][0]));
+  }
+  if(xs.length<2)return null;xs.sort((a,b)=>a-b);return{l:xs[0],r:xs[xs.length-1]};
+}
+
+// Shape outline path for optional guide
+function shapeOutlinePath(shape,W,H){
+  // Custom shapes: build outline from rasterized rows
+  if(shape.startsWith('custom:')){
+    const id=shape.split(':')[1];
+    const key=`${id}:${W}:${H}`;
+    const rows=customRowCache[key];
+    if(!rows||rows.size===0)return'';
+    // Build left and right edge point lists
+    const leftPts=[],rightPts=[];
+    for(let y=0;y<H;y++){
+      const r=rows.get(y);
+      if(r){leftPts.push(`${r.l},${y}`);rightPts.push(`${r.r},${y}`);}
+    }
+    rightPts.reverse();
+    return'M'+leftPts.concat(rightPts).join('L')+'Z';
+  }
+  const P=2,cx=W/2,cy=H/2;
+  switch(shape){
+    case'cross':{
+      const armR=parseInt(document.getElementById('armW').value)/100;
+      const barR=parseInt(document.getElementById('barH').value)/100;
+      const barP=parseInt(document.getElementById('barPos').value)/100;
+      const al=cx-W*armR/2,ar=cx+W*armR/2;
+      const bt=H*barP-H*barR/2,bb=H*barP+H*barR/2;
+      return`M${al},${P}H${ar}V${bt}H${W-P}V${bb}H${ar}V${H-P}H${al}V${bb}H${P}V${bt}H${al}Z`;
+    }
+    case'heart':{
+      const iw=W-P*2,ih=H-P*2;const pts=[];
+      for(let a=0;a<Math.PI*2;a+=.008){const x=16*Math.pow(Math.sin(a),3);const y=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));pts.push([(cx+x*iw/36).toFixed(1),(cy+y*ih/36-ih*.06).toFixed(1)])}
+      return'M'+pts.map(p=>p.join(',')).join('L')+'Z';
+    }
+    case'circle':{const R=Math.min(W,H)/2-P;return`M${cx},${cy-R}A${R},${R},0,1,1,${cx},${cy+R}A${R},${R},0,1,1,${cx},${cy-R}Z`}
+    case'diamond':return`M${cx},${P}L${W-P},${cy}L${cx},${H-P}L${P},${cy}Z`;
+    case'shield':{const my=cy+(H-P*2)*.1*0.5;return`M${P},${P}H${W-P}V${my}Q${W-P},${(H-P)*.87},${cx},${H-P}Q${P},${(H-P)*.87},${P},${my}Z`}
+    case'oval':{const rx=(W-P*2)/2,ry=(H-P*2)/2*.65;return`M${cx},${cy-ry}A${rx},${ry},0,1,1,${cx},${cy+ry}A${rx},${ry},0,1,1,${cx},${cy-ry}Z`}
+    default:return shapeOutlinePath('cross',W,H);
+  }
+}
+
+// ===================== MEASUREMENT =====================
+const mctx=(()=>{const c=document.getElementById('mc');c.width=2000;c.height=200;return c.getContext('2d')})();
+
+function measW(text,fs,fontFam,bold){
+  mctx.font=`${bold?'900':'700'} ${fs}px ${fontFam}`;
+  return mctx.measureText(text).width;
+}
+
+// Full metrics: width, ascent (above baseline), descent (below baseline)
+function measFull(text,fs,fontFam,bold){
+  mctx.font=`${bold?'900':'700'} ${fs}px ${fontFam}`;
+  const m=mctx.measureText(text);
+  return{
+    w:m.width,
+    asc:m.actualBoundingBoxAscent||fs*0.8,   // fallback if browser doesn't support
+    desc:m.actualBoundingBoxDescent||fs*0.2,
+    h:(m.actualBoundingBoxAscent||fs*0.8)+(m.actualBoundingBoxDescent||fs*0.2)
+  };
+}
+
+// ===================== LAYOUT ENGINE =====================
+
+// Pre-process words into tokens. A token is either:
+// - A single word: {type:'word', words:[{text,tier,lb}], idx:wordIndex}
+// - A stack group: {type:'stack', words:[{text,tier,lb},...], idx:firstWordIndex}
+// Stack groups are consumed as one horizontal slot during layout.
+function buildTokens(words){
+  const tokens=[];
+  let i=0;
+  while(i<words.length){
+    const w=words[i];
+    if(w.stackId){
+      // Collect all consecutive words with the same stackId
+      const group=[];
+      const sid=w.stackId;
+      const startIdx=i;
+      while(i<words.length&&words[i].stackId===sid){
+        group.push(words[i]);
+        i++;
+      }
+      tokens.push({type:'stack',words:group,idx:startIdx});
+    } else {
+      tokens.push({type:'word',words:[w],idx:i});
+      i++;
+    }
+  }
+  return tokens;
+}
+
+function doLayout(words,rowFn,W,H,baseFS,font,vTight,lSpaceEm,innerPad,boldAll){
+  let topY=null,botY=null;
+  for(let y=0;y<H;y++){if(rowFn(y)){topY=y;break}}
+  for(let y=H;y>0;y--){if(rowFn(y)){botY=y;break}}
+  if(topY===null)return{lines:[],allFit:false,topY:0,botY:H,usedY:0};
+
+  const tokens=buildTokens(words);
+  const lines=[];
+  let cy=topY+1;
+  let ti=0; // token index
+
+  while(ti<tokens.length&&cy<botY){
+    // Peek ahead to estimate tallest token on this line
+    let peekMax=baseFS;
+    for(let p=ti;p<Math.min(ti+8,tokens.length);p++){
+      const tk=tokens[p];
+      if(tk.type==='word'){
+        const pfs=baseFS*TM[tk.words[0].tier];
+        if(pfs>peekMax)peekMax=pfs;
+      } else {
+        // Stack: combined height at natural sizes
+        let sh=0;
+        for(const sw of tk.words)sh+=baseFS*TM[sw.tier];
+        if(sh>peekMax)peekMax=sh;
+      }
+    }
+
+    const probeY=cy+peekMax*0.45;
+    const row=rowFn(probeY);
+    if(!row||row.r-row.l<baseFS*0.5){cy+=1;continue}
+
+    const availW=row.r-row.l-innerPad*2;
+    const lineL=row.l+innerPad;
+    if(availW<baseFS){cy+=1;continue}
+
+    // Greedy pack tokens
+    const lineToks=[];
+    let naturalW=0;
+    let tki=ti;
+
+    while(tki<tokens.length){
+      const tk=tokens[tki];
+      // Measure token natural width
+      let tokW, tokFS;
+      if(tk.type==='word'){
+        tokFS=baseFS*TM[tk.words[0].tier];
+        tokW=measW(tk.words[0].text,tokFS,font,boldAll);
+      } else {
+        // Stack: estimate natural width based on what font size each word
+        // will ACTUALLY render at after height-fitting.
+        // Each stacked word gets ≈ lineHeight / n vertical space.
+        // Use peekMax as the estimated line height.
+        const n=tk.words.length;
+        const estFS=peekMax/n; // each word will be roughly this tall
+        tokW=0; tokFS=0;
+        for(const sw of tk.words){
+          const ww=measW(sw.text,estFS,font,boldAll);
+          if(ww>tokW)tokW=ww;
+          tokFS+=estFS;
+        }
+      }
+
+      // Uniform gap: based on estimated line height, not individual word size
+      const gap=lineToks.length>0?peekMax*Math.max(0.05,0.12+lSpaceEm)*0.3:0;
+      const total=naturalW+gap+tokW;
+
+      // Respect 'fit' markers: check if previous token's last word has lb='fit'
+      let mustInclude=false;
+      if(tki>ti){
+        const prevTok=tokens[tki-1];
+        const prevLastWord=prevTok.words[prevTok.words.length-1];
+        if(prevLastWord.lb==='fit')mustInclude=true;
+      }
+
+      if(total>availW&&lineToks.length>0&&!mustInclude)break;
+      lineToks.push({tok:tk,natW:tokW,gap});
+      naturalW=total;
+      tki++;
+
+      // Check if last word of this token forces a line break
+      const lastW=tk.words[tk.words.length-1];
+      if(lastW.lb==='break')break;
+    }
+
+    if(lineToks.length===0){cy+=1;continue}
+
+    // Scale factor to fill exact width
+    const scale=availW/naturalW;
+
+    // First pass: compute maxH from NON-stack tokens only.
+    let maxH=baseFS;
+    let hasNonStack=false;
+    for(const lt of lineToks){
+      if(lt.tok.type==='word'){
+        const fs=baseFS*TM[lt.tok.words[0].tier]*scale;
+        if(fs>maxH)maxH=fs;
+        hasNonStack=true;
+      }
+    }
+    if(!hasNonStack){
+      for(const lt of lineToks){
+        let sh=0;
+        for(const sw of lt.tok.words)sh+=baseFS*TM[sw.tier]*scale;
+        if(sh>maxH)maxH=sh;
+      }
+    }
+
+    // Second pass: lay out words in INTERNAL coordinates (relative to line top-left).
+    // The entire line becomes a container with viewBox → rendered height = maxH exactly.
+    let ix=0; // internal x cursor
+    const internalW=availW; // internal width = shape width at this row
+    const positioned=[];
+
+    for(let j=0;j<lineToks.length;j++){
+      const lt=lineToks[j];
+      const tk=lt.tok;
+      const gap=j>0?lt.gap*scale:0;
+      ix+=gap;
+
+      if(tk.type==='word'){
+        const fs=baseFS*TM[tk.words[0].tier]*scale;
+        const ww=measW(tk.words[0].text,fs,font,boldAll);
+        positioned.push({text:tk.words[0].text,x:ix,y:maxH*0.82,fs,bold:boldAll,wi:tk.idx,isSep:!!tk.words[0].isSep});
+        ix+=ww;
+      } else {
+        // STACK: words laid out vertically within the same internal height (maxH)
+        const slotW=lt.natW*scale;
+        const n=tk.words.length;
+
+        // Find font size for each word that fills slotW, measure actual metrics
+        const stackWords=[];
+        for(let si=0;si<tk.words.length;si++){
+          const sw=tk.words[si];
+          let lo=1,hi=300,fs=1;
+          for(let it=0;it<30;it++){
+            const mid=(lo+hi)/2;
+            if(measW(sw.text,mid,font,boldAll)<=slotW){fs=mid;lo=mid+0.01}else{hi=mid-0.01}
+          }
+          const m=measFull(sw.text,fs,font,boldAll);
+          stackWords.push({text:sw.text,fs,wi:tk.idx+si,asc:m.asc,desc:m.desc,mw:m.w});
+        }
+
+        // Pack stacked words using real ascent/descent — no magic numbers
+        // Each word: top = baseline - ascent, bottom = baseline + descent
+        // Place first word's top at y=0, subsequent words touching the previous bottom
+        let sy=0;
+        const subWords=[];
+        for(const sw of stackWords){
+          // baseline for this word = current sy + its ascent
+          const baseline=sy+sw.asc;
+          const xOff=(slotW-sw.mw)/2;
+          subWords.push({text:sw.text,x:xOff,y:baseline,fs:sw.fs,wi:sw.wi});
+          // advance by the full visual height of this word (ascent + descent)
+          sy=baseline+sw.desc;
+        }
+        // viewBoxH = total visual height of all stacked words, measured precisely
+        const viewBoxH=sy;
+
+        // Wrap in a sub-container that scales to fit maxH
+        positioned.push({
+          type:'stack',
+          x:ix, w:slotW,
+          viewBoxH,
+          words:subWords.map(sw=>({text:sw.text,x:sw.x,y:sw.y,fs:sw.fs,bold:boldAll,wi:sw.wi}))
+        });
+        ix+=slotW;
+      }
+    }
+
+    // Store line as a container: position in global coords, internal layout in local coords
+    lines.push({
+      type:'line',
+      cx:lineL, cy, cw:internalW, ch:maxH,
+      words:positioned,
+      h:maxH, top:cy, bot:cy+maxH
+    });
+    ti=tki;
+    cy+=maxH*(vTight/100);
+  }
+
+  // Check all words placed
+  const totalWords=words.length;
+  const placedWords=lines.reduce((s,l)=>s+l.words.length,0);
+  // For stacked words, the token count differs from word count, so check token index
+  return{lines,allFit:ti>=tokens.length,topY,botY,usedY:cy};
+}
+
+// ===================== GENERATE =====================
+async function generate(){
+  if(suppressGen)return;
+  if(!WD.length){suppressGen=true;parseWords();autoEm();suppressGen=false;}
+
+  const W=parseInt(document.getElementById('svgW').value);
+  const H=parseInt(document.getElementById('svgH').value);
+
+  // Pre-rasterize custom shape if needed
+  if(curS.startsWith('custom:')){
+    const id=curS.split(':')[1];
+    await getCustomShapeRows(id,W,H);
+  }
+  const font=document.getElementById('font').value;
+  const vTight=parseInt(document.getElementById('vTight').value);
+  const lSpaceEm=parseInt(document.getElementById('lSpace').value)/100;
+  const innerPad=parseInt(document.getElementById('pad').value);
+  const caps=document.getElementById('caps').checked;
+  const boldAll=document.getElementById('boldAll').checked;
+  const showOutline=document.getElementById('outline').checked;
+  const color=document.getElementById('color').value;
+
+  const rowFn=getShapeRowFn(curS,W,H);
+  const words=WD.map(w=>({text:caps?w.text.toUpperCase():w.text,tier:w.tier,lb:w.lb,stackId:w.stackId,isSep:!!w.isSep}));
+
+  // Binary search: find largest baseSize where all words fit
+  let lo=1,hi=80,bestResult=null,bestBase=1;
+  for(let i=0;i<50;i++){
+    const mid=(lo+hi)/2;
+    const res=doLayout(words,rowFn,W,H,mid,font,vTight,lSpaceEm,innerPad,boldAll);
+    if(res.allFit){bestBase=mid;bestResult=res;lo=mid+0.02}else{hi=mid-0.02}
+  }
+  if(!bestResult)bestResult=doLayout(words,rowFn,W,H,bestBase,font,vTight,lSpaceEm,innerPad,boldAll);
+  lastLayout={lines:bestResult.lines,W,H,font,boldAll,color};
+
+  // Vertically center the text block within the shape
+  if(bestResult.lines.length>0){
+    const firstTop=bestResult.lines[0].top;
+    const lastBot=bestResult.lines[bestResult.lines.length-1].bot;
+    const textH=lastBot-firstTop;
+    const shapeH=bestResult.botY-bestResult.topY;
+    const offset=(shapeH-textH)/2-(firstTop-bestResult.topY);
+    if(offset>1){
+      for(const ln of bestResult.lines)ln.cy+=offset;
+    }
+  }
+
+  // ========== BUILD SVG — NO CLIP-PATH ==========
+  const lsAttr=lSpaceEm!==0?` letter-spacing="${lSpaceEm}em"`:'';
+  const parts=[`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`];
+
+  // Optional outline guide (for alignment, not part of cut)
+  if(showOutline){
+    parts.push(`<path d="${shapeOutlinePath(curS,W,H)}" fill="none" stroke="#ddd" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.4"/>`);
+  }
+
+  // Every line is a <svg> container — hard constraint on position and height.
+  // Words are in internal (line-local) coordinates; viewBox scales to fit.
+  for(const ln of bestResult.lines){
+    // Line container: positioned at (cx, cy), sized (cw, ch)
+    // Internal viewBox = same width, height = ch (1:1 for non-stack words)
+    parts.push(`<svg x="${ln.cx.toFixed(1)}" y="${ln.cy.toFixed(1)}" width="${ln.cw.toFixed(1)}" height="${ln.ch.toFixed(1)}" viewBox="0 0 ${ln.cw.toFixed(1)} ${ln.ch.toFixed(1)}" overflow="hidden">`);
+
+    for(const w of ln.words){
+      if(w.type==='stack'){
+        // Sub-container within the line for stacked words
+        // Scales internal stack layout to fit within line height
+        // Scale viewBox so uniform scaling fills the container height exactly.
+        // The y-scale = ch/viewBoxH. To make meet use that scale for both axes,
+        // set viewBox width = container width * (viewBoxH / ch) so x-scale = y-scale.
+        const vbW=(w.w*w.viewBoxH/ln.ch).toFixed(1);
+        parts.push(`<svg x="${w.x.toFixed(1)}" y="0" width="${w.w.toFixed(1)}" height="${ln.ch.toFixed(1)}" viewBox="0 0 ${vbW} ${w.viewBoxH.toFixed(1)}" preserveAspectRatio="xMidYMid meet">`);
+        for(const sw of w.words){
+          const bAttr=sw.bold?' font-weight="900"':' font-weight="700"';
+          const wiAttr=sw.wi!=null?` data-wi="${sw.wi}"`:'';
+          parts.push(`  <text x="${sw.x.toFixed(1)}" y="${sw.y.toFixed(1)}" font-family="${font}" font-size="${sw.fs.toFixed(1)}"${bAttr} fill="${color}"${lsAttr}${wiAttr}>${esc(sw.text)}</text>`);
+        }
+        parts.push(`</svg>`);
+      } else if(w.isSep){
+        const sepFS=ln.ch*0.4;
+        const wiAttr=w.wi!=null?` data-wi="${w.wi}"`:'';
+        parts.push(`<text x="${(ln.cw/2).toFixed(1)}" y="${(ln.ch*0.7).toFixed(1)}" font-family="${font}" font-size="${sepFS.toFixed(1)}" font-weight="700" fill="${color}" text-anchor="middle"${wiAttr}>${esc(w.text)}</text>`);
+      } else {
+        const bAttr=w.bold?' font-weight="900"':' font-weight="700"';
+        const wiAttr=w.wi!=null?` data-wi="${w.wi}"`:'';
+        parts.push(`<text x="${w.x.toFixed(1)}" y="${w.y.toFixed(1)}" font-family="${font}" font-size="${w.fs.toFixed(1)}"${bAttr} fill="${color}"${lsAttr}${wiAttr}>${esc(w.text)}</text>`);
+      }
+    }
+    parts.push(`</svg>`);
+  }
+
+  parts.push('</svg>');
+
+  // Build a clean SVG string for export (without data-wi attributes)
+  svgO=parts.join('\n').replace(/ data-wi="\d+"/g,'');
+
+  // Render (keep data-wi for interactivity)
+  document.getElementById('pvB').innerHTML=parts.join('\n');
+  const el=document.getElementById('pvB').querySelector('svg');
+  if(el){el.id='ps';el.style.transform=`scale(${zm})`;el.style.transformOrigin='top center'}
+
+  // Status
+  const placed=bestResult.lines.reduce((s,l)=>s+l.words.length,0);
+  document.getElementById('status').textContent=
+    `${placed}/${words.length} words · base ${bestBase.toFixed(1)}px · ${bestResult.lines.length} lines`;
+
+  // ========== INTERACTIVE PREVIEW ==========
+  bindPreviewHandlers();
+}
+
+// ===================== INTERACTIVE PREVIEW =====================
+const TIER_NAMES=['','Tiny','Small','Med-S','Normal','Med-L','Large','Hero'];
+let regenTimer=null;
+let dragState=null;
+let wheelUndoPushed=false; // only push undo once per wheel burst
+
+function bindPreviewHandlers(){
+  const svg=document.getElementById('ps');
+  if(!svg)return;
+
+  svg.querySelectorAll('text[data-wi]').forEach(txt=>{
+    const wi=parseInt(txt.dataset.wi);
+
+    // Click: select
+    txt.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(e.shiftKey){sel.has(wi)?sel.delete(wi):sel.add(wi)}
+      else{sel.clear();sel.add(wi)}
+      renderC();updatePreviewUI();
+    });
+
+    // Wheel: resize tier
+    txt.addEventListener('wheel',e=>{
+      e.preventDefault();e.stopPropagation();
+      if(!wheelUndoPushed){pushUndo();wheelUndoPushed=true}
+      const targets=sel.has(wi)&&sel.size>0?[...sel]:[wi];
+      const dir=e.deltaY<0?1:-1;
+      for(const i of targets){
+        const w=WD[i];if(!w)continue;
+        w.tier=Math.max(1,Math.min(7,w.tier+dir));
+      }
+      if(!sel.has(wi)){sel.clear();sel.add(wi)}
+      showTierPop(e.clientX,e.clientY,WD[wi].tier,WD[wi].text);
+      renderC();
+      clearTimeout(regenTimer);
+      regenTimer=setTimeout(()=>{generate();wheelUndoPushed=false},250);
+    },{passive:false});
+
+    // Hover
+    txt.addEventListener('mouseenter',()=>{if(!sel.has(wi))txt.classList.add('pv-hover')});
+    txt.addEventListener('mouseleave',()=>{txt.classList.remove('pv-hover');hideTierPop()});
+
+    // Right-click: context menu
+    txt.addEventListener('contextmenu',e=>{
+      e.preventDefault();e.stopPropagation();
+      if(!sel.has(wi)){sel.clear();sel.add(wi);renderC()}
+      showCtxMenu(e.clientX,e.clientY);
+      updatePreviewUI();
+    });
+  });
+
+  // Background click = deselect
+  svg.addEventListener('click',e=>{
+    if(e.target===svg||e.target.tagName==='path'){
+      sel.clear();renderC();updatePreviewUI();
+    }
+  });
+  svg.addEventListener('contextmenu',e=>{
+    if(e.target===svg||e.target.tagName==='path'){
+      e.preventDefault();
+    }
+  });
+
+  updatePreviewUI();
+}
+
+// ---- Highlight + drag handles ----
+function updatePreviewUI(){
+  highlightPreviewSel();
+  positionDragHandles();
+}
+
+function highlightPreviewSel(){
+  const svg=document.getElementById('ps');
+  if(!svg)return;
+  svg.querySelectorAll('text[data-wi]').forEach(txt=>{
+    txt.classList.toggle('pv-sel',sel.has(parseInt(txt.dataset.wi)));
+  });
+}
+
+function positionDragHandles(){
+  const hc=document.getElementById('dragHandles');
+  hc.innerHTML='';
+  if(sel.size===0)return;
+
+  const svg=document.getElementById('ps');
+  if(!svg)return;
+  const pvb=document.getElementById('pvB');
+  const pvbRect=pvb.getBoundingClientRect();
+
+  // Compute bounding box of all selected words in screen coords
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  svg.querySelectorAll('text[data-wi]').forEach(txt=>{
+    if(!sel.has(parseInt(txt.dataset.wi)))return;
+    const r=txt.getBoundingClientRect();
+    if(r.left<minX)minX=r.left;
+    if(r.top<minY)minY=r.top;
+    if(r.right>maxX)maxX=r.right;
+    if(r.bottom>maxY)maxY=r.bottom;
+  });
+
+  if(minX===Infinity)return;
+
+  // Position handle container relative to viewport
+  hc.style.left='0px';hc.style.top='0px';hc.style.width='100%';hc.style.height='100%';
+
+  // Selection box
+  const box=document.createElement('div');
+  box.className='sel-box';
+  box.style.left=minX+'px';box.style.top=minY+'px';
+  box.style.width=(maxX-minX)+'px';box.style.height=(maxY-minY)+'px';
+  hc.appendChild(box);
+
+  // Corner + mid-right handles
+  const handles=[
+    {cls:'h-tl',x:minX,y:minY},
+    {cls:'h-tr',x:maxX,y:minY},
+    {cls:'h-bl',x:minX,y:maxY},
+    {cls:'h-br',x:maxX,y:maxY},
+    {cls:'h-mr',x:maxX,y:(minY+maxY)/2},
+  ];
+
+  for(const h of handles){
+    const dot=document.createElement('div');
+    dot.className=`drag-handle ${h.cls}`;
+    dot.style.left=h.x+'px';dot.style.top=h.y+'px';
+    dot.addEventListener('mousedown',e=>startDrag(e,h.cls));
+    hc.appendChild(dot);
+  }
+}
+
+// ---- Drag resize ----
+function startDrag(e,handleCls){
+  e.preventDefault();e.stopPropagation();
+  if(sel.size===0)return;
+  pushUndo();
+
+  const indices=[...sel];
+  dragState={
+    startY:e.clientY,
+    startX:e.clientX,
+    handleCls,
+    indices,
+    startTiers:indices.map(i=>WD[i].tier),
+    // Store continuous scale values for smooth dragging (not just integer tiers)
+    scales:indices.map(i=>TM[WD[i].tier]),
+  };
+
+  document.addEventListener('mousemove',onDrag);
+  document.addEventListener('mouseup',endDrag);
+}
+
+function onDrag(e){
+  if(!dragState)return;
+  const dy=dragState.startY-e.clientY; // up = positive = bigger
+  const dx=e.clientX-dragState.startX; // right = positive = bigger
+
+  // Use vertical distance for corner handles, horizontal for mid-right
+  let delta;
+  if(dragState.handleCls==='h-mr'){
+    delta=dx;
+  } else {
+    // Corners: use the diagonal
+    delta=(dy+dx*0.5);
+  }
+
+  // Scale: every 15px of drag = one tier step
+  const tierDelta=delta/15;
+
+  for(let k=0;k<dragState.indices.length;k++){
+    const i=dragState.indices[k];
+    const baseTier=dragState.startTiers[k];
+    const newTier=Math.max(1,Math.min(7,Math.round(baseTier+tierDelta)));
+    WD[i].tier=newTier;
+  }
+
+  // Show popup for first selected word
+  const fi=dragState.indices[0];
+  showTierPop(e.clientX,e.clientY,WD[fi].tier,WD[fi].text);
+
+  renderC();
+  // Live regenerate (throttled)
+  clearTimeout(regenTimer);
+  regenTimer=setTimeout(()=>generate(),80);
+}
+
+function endDrag(){
+  dragState=null;
+  document.removeEventListener('mousemove',onDrag);
+  document.removeEventListener('mouseup',endDrag);
+  hideTierPop();
+  generate(); // final regen
+}
+
+// ---- Context menu ----
+function showCtxMenu(x,y){
+  const m=document.getElementById('ctxMenu');
+  m.style.left=x+'px';m.style.top=y+'px';m.style.display='block';
+
+  // Enable/disable items based on selection
+  const n=sel.size;
+  const indices=[...sel].sort((a,b)=>a-b);
+  const consecutive=indices.every((v,i)=>i===0||v===indices[i-1]+1);
+
+  m.querySelector('[data-act="fitline"]').classList.toggle('disabled',n<2);
+  m.querySelector('[data-act="stack"]').classList.toggle('disabled',n<2||!consecutive);
+  m.querySelector('[data-act="unstack"]').classList.toggle('disabled',![...sel].some(i=>WD[i].stackId));
+}
+
+function hideCtxMenu(){document.getElementById('ctxMenu').style.display='none'}
+
+// Close context menu on any click
+document.addEventListener('click',()=>hideCtxMenu());
+document.addEventListener('contextmenu',e=>{
+  // Only suppress default on the preview area
+  const pvb=document.getElementById('pvB');
+  if(pvb&&pvb.contains(e.target))e.preventDefault();
+});
+
+// Context menu actions
+document.getElementById('ctxMenu').addEventListener('click',e=>{
+  const item=e.target.closest('.ctx-item');
+  if(!item||item.classList.contains('disabled'))return;
+  const act=item.dataset.act;
+  hideCtxMenu();
+
+  if(act.startsWith('tier')){
+    const t=parseInt(act.replace('tier',''));
+    bulkT(t);
+    generate();
+  } else if(act==='fitline'){
+    fitToLine();
+  } else if(act==='stack'){
+    stackToLines();
+  } else if(act==='unstack'){
+    unstack();
+  } else if(act==='selall'){
+    sel.clear();WD.forEach((_,i)=>sel.add(i));renderC();updatePreviewUI();
+  } else if(act==='desel'){
+    sel.clear();renderC();updatePreviewUI();
+  }
+});
+
+// ---- Tier popup ----
+function showTierPop(cx,cy,tier,text){
+  const pop=document.getElementById('tierPop');
+  pop.querySelector('.tier-num').textContent=tier;
+  pop.querySelector('.tier-label').textContent=`${TIER_NAMES[tier]} "${text}"`;
+  pop.style.left=(cx+14)+'px';pop.style.top=(cy-12)+'px';pop.style.display='block';
+}
+function hideTierPop(){document.getElementById('tierPop').style.display='none'}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ===================== LASER-CUT VECTOR EXPORT =====================
+// Pipeline: render text to canvas → add bridges → ImageTracer.js (potrace-style) → SVG path
+
+async function exportLaserSVG(){
+  if(!lastLayout||!lastLayout.lines.length){alert('Generate a preview first.');return}
+  if(typeof ImageTracer==='undefined'){alert('ImageTracer library not loaded. Check internet connection.');return}
+
+  const{lines,W,H,font,boldAll,color}=lastLayout;
+  const scale=parseInt(document.getElementById('traceRes').value)||3;
+  const bridgeW=parseFloat(document.getElementById('bridgeW').value)||2;
+  const fillCounters=document.getElementById('fillCounters').checked;
+  const stat=s=>{document.getElementById('status').textContent=s};
+
+  stat('Rendering to canvas...');
+  await new Promise(r=>setTimeout(r,20));
+
+  // 1. Render all text to high-res canvas
+  const cw=W*scale, ch=H*scale;
+  const canvas=document.getElementById('laserCanvas');
+  canvas.width=cw; canvas.height=ch;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,cw,ch);
+  ctx.fillStyle='#000';
+
+  // Render each line container to canvas
+  for(const ln of lines){
+    const lx=ln.cx*scale, ly=ln.cy*scale;
+    // Line container is 1:1 (viewBox = container size), so just offset
+    for(const w of ln.words){
+      if(w.type==='stack'){
+        // Stack sub-container: scale uniformly to fill line height exactly
+        // Scale uniformly to fill line height, center horizontally
+        const s=(ln.ch/w.viewBoxH)*scale;
+        const scaledW=w.w*(ln.ch/w.viewBoxH); // how wide the stack is after scaling
+        const offX=(w.w*scale-scaledW*scale)/2; // center horizontally
+        for(const sw of w.words){
+          ctx.font=`${sw.bold?'900':'700'} ${(sw.fs*s).toFixed(1)}px ${font}`;
+          ctx.fillText(sw.text, lx+w.x*scale+sw.x*s+offX, ly+sw.y*s);
+        }
+      } else {
+        ctx.font=`${w.bold?'900':'700'} ${(w.fs*scale).toFixed(1)}px ${font}`;
+        ctx.fillText(w.text, lx+w.x*scale, ly+w.y*scale);
+      }
+    }
+  }
+
+  // 2. Add connecting bridges
+  stat('Adding bridges...');
+  await new Promise(r=>setTimeout(r,10));
+  const bw=bridgeW*scale;
+
+  // Horizontal bridges between adjacent words on same line
+  for(const ln of lines){
+    const ws=ln.words;
+    for(let i=0;i<ws.length-1;i++){
+      const a=ws[i], b=ws[i+1];
+      const aRight=a.x*scale+measW(a.text,a.fs*scale,font,a.bold);
+      const bLeft=b.x*scale;
+      const midY=a.y*scale-a.fs*scale*0.3;
+      ctx.fillRect(Math.min(aRight,bLeft)-1, midY-bw/2, Math.abs(bLeft-aRight)+2, bw);
+    }
+  }
+
+  // Vertical bridges between adjacent lines
+  for(let i=0;i<lines.length-1;i++){
+    const ln=lines[i], nextLn=lines[i+1];
+    const topY=ln.words[0].y*scale;
+    const botY=nextLn.words[0].y*scale-nextLn.h*scale*0.7;
+    const lnLeft=Math.min(...ln.words.map(w=>w.x))*scale;
+    const lnRight=Math.max(...ln.words.map(w=>w.x+measW(w.text,w.fs,font,w.bold)))*scale;
+    const nextLeft=Math.min(...nextLn.words.map(w=>w.x))*scale;
+    const nextRight=Math.max(...nextLn.words.map(w=>w.x+measW(w.text,w.fs,font,w.bold)))*scale;
+    const overlapL=Math.max(lnLeft,nextLeft);
+    const overlapR=Math.min(lnRight,nextRight);
+    if(overlapR>overlapL){
+      const span=overlapR-overlapL;
+      for(const frac of[0.15,0.35,0.5,0.65,0.85]){
+        ctx.fillRect(overlapL+span*frac-bw/2, topY, bw, botY-topY+nextLn.h*scale*0.5);
+      }
+    }
+  }
+
+  // 3. Fill counters if requested (morphological close: dilate)
+  if(fillCounters){
+    stat('Filling letter counters...');
+    await new Promise(r=>setTimeout(r,10));
+    const imgData=ctx.getImageData(0,0,cw,ch);
+    const d=imgData.data;
+    const rad=Math.ceil(2.5*scale);
+    const copy=new Uint8ClampedArray(d);
+    for(let y=rad;y<ch-rad;y++){
+      for(let x=rad;x<cw-rad;x++){
+        if(copy[(y*cw+x)*4+3]>128)continue;
+        let near=false;
+        outer:for(let dy=-rad;dy<=rad;dy+=2){
+          for(let dx=-rad;dx<=rad;dx+=2){
+            if(dx*dx+dy*dy>rad*rad)continue;
+            if(copy[((y+dy)*cw+(x+dx))*4+3]>128){near=true;break outer}
+          }
+        }
+        if(near){d[(y*cw+x)*4+3]=255;d[(y*cw+x)*4]=0;d[(y*cw+x)*4+1]=0;d[(y*cw+x)*4+2]=0}
+      }
+    }
+    ctx.putImageData(imgData,0,0);
+  }
+
+  // 4. Trace with ImageTracer.js (potrace-style algorithm)
+  stat('Tracing vectors (ImageTracer)...');
+  await new Promise(r=>setTimeout(r,20));
+
+  const imgd=ctx.getImageData(0,0,cw,ch);
+
+  // ImageTracer options tuned for laser cutting: sharp corners, minimal smoothing
+  const options={
+    // Tracing
+    ltres:1,        // line threshold
+    qtres:1,        // quadratic spline threshold
+    pathomit:8,     // discard tiny paths
+    // Color quantization: force 2 colors (black + white)
+    colorsampling:0,
+    numberofcolors:2,
+    // Detail
+    rightangleenhance:true,
+    // Output scaling (we scale back to original size)
+    scale:1/scale,
+  };
+
+  // Use ImageTracer to convert imagedata to SVG string
+  let tracedSvg;
+  try{
+    tracedSvg=ImageTracer.imagedataToSVG(imgd,options);
+  }catch(e){
+    // Fallback: try with simpler options
+    try{
+      tracedSvg=ImageTracer.imagedataToSVG(imgd,{scale:1/scale,numberofcolors:2,pathomit:4});
+    }catch(e2){
+      stat('Tracing failed: '+e2.message);
+      return;
+    }
+  }
+
+  // 5. Post-process: extract just the black paths, set the user's color
+  // ImageTracer outputs a full SVG with multiple paths. Parse and keep only dark paths.
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(tracedSvg,'image/svg+xml');
+  const paths=doc.querySelectorAll('path');
+  const darkPaths=[];
+  for(const p of paths){
+    const fill=p.getAttribute('fill')||'';
+    // Keep black/dark paths, skip white/light paths
+    if(fill.startsWith('rgb')){
+      const m=fill.match(/\d+/g);
+      if(m&&parseInt(m[0])<128)darkPaths.push(p.getAttribute('d'));
+    }else if(fill==='#000000'||fill==='#000'||fill==='black'){
+      darkPaths.push(p.getAttribute('d'));
+    }else if(!fill||fill==='none'){
+      // skip
+    }else{
+      // Hex color - check if dark
+      const hex=fill.replace('#','');
+      if(hex.length>=6&&parseInt(hex.substring(0,2),16)<128)darkPaths.push(p.getAttribute('d'));
+    }
+  }
+
+  if(darkPaths.length===0){
+    // If color detection failed, just take all paths
+    for(const p of paths){
+      const d=p.getAttribute('d');
+      if(d)darkPaths.push(d);
+    }
+  }
+
+  stat(`Processing ${darkPaths.length} traced paths...`);
+
+  // 6. Build final SVG
+  const combinedD=darkPaths.join(' ');
+  const laserSvg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+<path d="${combinedD}" fill="${color}" fill-rule="evenodd" stroke="none"/>
+</svg>`;
+
+  // 7. Show preview + download
+  document.getElementById('pvB').innerHTML=laserSvg;
+  const el=document.getElementById('pvB').querySelector('svg');
+  if(el){el.id='ps';el.style.transform=`scale(${zm})`;el.style.transformOrigin='top center'}
+
+  const blob=new Blob([laserSvg],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`laser-cut-${curS}-${Date.now()}.svg`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  stat(`Laser SVG exported (${darkPaths.length} paths, ${(combinedD.length/1024).toFixed(0)}KB)`);
+}
+
+function doExport(){
+  if(!svgO)return;
+  const b=new Blob([svgO],{type:'image/svg+xml'});const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download=`text-shape-${curS}-${Date.now()}.svg`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+}
+
+// ===================== INIT =====================
+window.addEventListener('resize',()=>positionDragHandles());
+// Reposition handles when scrolling the preview area
+document.querySelector('.pv')?.addEventListener('scroll',()=>positionDragHandles());
+
+setTimeout(async()=>{
+  loadCustomShapes();
+  suppressGen=true;
+  const loaded=loadAutoSave();
+  if(!loaded){parseWords();autoEm();}
+  suppressGen=false;
+  await generate();
+  updateUndoUI();
+},200);
+</script>
+</body>
+</html>
