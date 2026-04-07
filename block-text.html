@@ -196,15 +196,17 @@ function computeLayout(){
     const y=cy;
     cy+=lineH;
 
-    // Binary search for font size that fills availW
-    let lo=4,hi=lineH*1.5,bestFS=4;
+    // Binary search for font size that fills availW.
+    // Font size will be LARGER than lineH — glyphs only fill ~70% of em box,
+    // so we need ~lineH/0.7 to make the actual ink fill the full line slot
+    // and overlap into neighbors for welding.
+    let lo=4,hi=lineH*2.5,bestFS=4;
     for(let i=0;i<40;i++){
       const mid=(lo+hi)/2;
-      if(measW(text,mid,font)<=availW&&mid<=lineH*1.1){bestFS=mid;lo=mid+0.01}else{hi=mid-0.01}
+      if(measW(text,mid,font)<=availW){bestFS=mid;lo=mid+0.01}else{hi=mid-0.01}
     }
 
-    // Apply +/- boost: each + adds 15% to font size, each - removes 15%
-    // Font can exceed lineH — it overflows into neighbors, welded together
+    // Apply +/- boost
     bestFS*=Math.max(0.3, 1+boost*0.15);
 
     // Per-character positions with horizontal stretch
@@ -250,7 +252,7 @@ async function generateWelded(){
 
   for(const ln of lines){
     const fs=ln.fs*scale;
-    const baseline=(ln.y+ln.lineH*0.82)*scale; // baseline at 82% of line slot
+    const baseline=(ln.y+ln.lineH*0.5+ln.fs*0.35)*scale; // baseline at 82% of line slot
 
     // Method: render each character individually, stretched to fill width.
     // Use ctx.save/restore with horizontal scale to stretch each char.
@@ -307,7 +309,7 @@ async function generateWelded(){
   // Score lines: character outlines + vertical lines between letters + horizontal lines between rows
   if(showScore){
     for(const ln of lines){
-      const baseline=ln.y+ln.lineH*0.82;
+      const baseline=ln.y+ln.lineH*0.5+ln.fs*0.35;
 
       // Character outlines
       for(const c of ln.chars){
