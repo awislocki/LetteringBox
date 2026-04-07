@@ -582,16 +582,21 @@ def find_best_layout(words, row_fn, W, H, face, vtight, ls_em, inner_pad):
 
 # ======================== VECTORIZATION & UNION ========================
 
-def layout_to_polygons(layout, face, ls_em, bridge_width=2.0, fill_counters=False):
-    """Convert the layout to Shapely polygons: text glyphs + bridges."""
+def layout_to_polygons(layout, face, ls_em, bridge_width=2.0, fill_counters=False, collect_score_lines=False):
+    """Convert the layout to Shapely polygons: text glyphs + bridges.
+
+    If collect_score_lines=True, also returns per-character outlines for scoring.
+    Score lines are the individual letter boundaries — drawn as hairline strokes
+    on top of the welded cut shape so letters are visually distinct when engraved.
+    """
     all_polys = []
+    score_polys = []  # individual character outlines for scoring
 
     for ln in layout['lines']:
         lx, ly = ln['cx'], ln['cy']
 
         for w in ln['words']:
             if w.get('type') == 'stack':
-                # Stack: scale internal coords to fit line height
                 if w['viewBoxH'] > 0:
                     s = ln['ch'] / w['viewBoxH']
                 else:
@@ -601,6 +606,15 @@ def layout_to_polygons(layout, face, ls_em, bridge_width=2.0, fill_counters=Fals
                     x_pos = lx + w['x'] + sw['x'] * s
                     y_pos = ly + sw['y'] * s
                     polys = text_to_polygons(face, sw['text'], fs, x_pos, y_pos, ls_em)
+                    if collect_score_lines:
+                        # Collect each character's outline individually for scoring
+                        char_x = x_pos
+                        face.set_char_size(int(fs * 64))
+                        for ch in sw['text']:
+                            face.load_char(ch, freetype.FT_LOAD_NO_BITMAP)
+                            ch_polys = text_to_polygons(face, ch, fs, char_x, y_pos, 0)
+                            score_polys.extend(ch_polys)
+                            char_x += face.glyph.advance.x / 64 + fs * ls_em
                     if fill_counters:
                         polys = [Polygon(p.exterior) for p in polys if p.exterior is not None]
                     all_polys.extend(polys)
@@ -610,6 +624,14 @@ def layout_to_polygons(layout, face, ls_em, bridge_width=2.0, fill_counters=Fals
                 x_pos = lx + w['x']
                 y_pos = ly + w['y']
                 polys = text_to_polygons(face, w['text'], w['fs'], x_pos, y_pos, ls_em)
+                if collect_score_lines:
+                    char_x = x_pos
+                    face.set_char_size(int(w['fs'] * 64))
+                    for ch in w['text']:
+                        face.load_char(ch, freetype.FT_LOAD_NO_BITMAP)
+                        ch_polys = text_to_polygons(face, ch, w['fs'], char_x, y_pos, 0)
+                        score_polys.extend(ch_polys)
+                        char_x += face.glyph.advance.x / 64 + w['fs'] * ls_em
                 if fill_counters:
                     polys = [Polygon(p.exterior) for p in polys if p.exterior is not None]
                 all_polys.extend(polys)
@@ -618,6 +640,8 @@ def layout_to_polygons(layout, face, ls_em, bridge_width=2.0, fill_counters=Fals
     bridges = generate_bridges(layout, bridge_width)
     all_polys.extend(bridges)
 
+    if collect_score_lines:
+        return all_polys, score_polys
     return all_polys
 
 
@@ -793,14 +817,34 @@ def geometry_to_svg_path(geom, decimals=2):
     return ' '.join(parts)
 
 
-def export_svg(geom, W, H, color='#000000', output_path='laser-output.svg'):
-    """Write the geometry as a clean SVG file."""
-    path_d = geometry_to_svg_path(geom)
+def export_svg(geom, W, H, color='#000000', output_path='laser-output.svg',
+               score_geom=None, cut_color='#FF0000', score_color='#0000FF'):
+    """Write the geometry as a laser-ready SVG file.
 
-    svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+    Layers:
+    - Cut path: the welded outer shape (red stroke for laser cut, or filled black for display)
+    - Score lines: individual letter outlines (blue hairline stroke for laser score/engrave)
+
+    Standard laser color coding:
+    - Red (#FF0000) = cut through
+    - Blue (#0000FF) = score / light engrave
+    - Black (#000000) = raster engrave
+    """
+    cut_path_d = geometry_to_svg_path(geom)
+
+    svg_parts = [f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">
-  <path d="{path_d}" fill="{color}" fill-rule="evenodd" stroke="none"/>
-</svg>'''
+  <!-- CUT layer: welded outer shape — one connected piece -->
+  <path d="{cut_path_d}" fill="{color}" fill-rule="evenodd" stroke="{cut_color}" stroke-width="0.01"/>''']
+
+    if score_geom is not None:
+        score_path_d = geometry_to_svg_path(score_geom)
+        svg_parts.append(f'''
+  <!-- SCORE layer: individual letter outlines — light engrave for visual separation -->
+  <path d="{score_path_d}" fill="none" fill-rule="evenodd" stroke="{score_color}" stroke-width="0.2"/>''')
+
+    svg_parts.append('\n</svg>')
+    svg = ''.join(svg_parts)
 
     Path(output_path).write_text(svg, encoding='utf-8')
     return output_path
@@ -880,7 +924,10 @@ def main():
     parser.add_argument('--bar-position', type=int, default=30, help='Cross bar position percent from top')
     parser.add_argument('--output', type=str, default='laser-output.svg')
     parser.add_argument('--fill-counters', action='store_true', help='Fill letter holes (O, A, D, etc)')
+    parser.add_argument('--score', action='store_true', help='Add score lines (blue hairline letter outlines for engraving)')
     parser.add_argument('--color', type=str, default='#000000')
+    parser.add_argument('--cut-color', type=str, default='#FF0000', help='Cut line color (default red)')
+    parser.add_argument('--score-color', type=str, default='#0000FF', help='Score line color (default blue)')
     parser.add_argument('--auto-emphasis', action='store_true', help='Auto-assign word emphasis tiers')
     parser.add_argument('--separator', type=str, default='', help='Line separator symbol')
     parser.add_argument('--tiers', type=str, help='Comma-separated tier values per word')
@@ -934,10 +981,19 @@ def main():
 
     # Vectorize
     print('Converting text to vector outlines...')
-    polys = layout_to_polygons(layout, face, args.letter_spacing, args.bridge_width, args.fill_counters)
-    print(f'  {len(polys)} polygons generated')
+    score_polys = None
+    if args.score:
+        polys, score_polys_raw = layout_to_polygons(
+            layout, face, args.letter_spacing, args.bridge_width,
+            args.fill_counters, collect_score_lines=True)
+        print(f'  {len(polys)} cut polygons, {len(score_polys_raw)} score polygons')
+    else:
+        polys = layout_to_polygons(
+            layout, face, args.letter_spacing, args.bridge_width, args.fill_counters)
+        score_polys_raw = None
+        print(f'  {len(polys)} polygons generated')
 
-    # Union
+    # Union cut paths
     print('Boolean union (this may take a moment)...')
     geom = union_polygons(polys)
     if geom is None:
@@ -947,16 +1003,28 @@ def main():
     # Ensure single connected piece
     geom = ensure_connected(geom, args.bridge_width * 2)
 
-    geom_type = type(geom).__name__
     if isinstance(geom, Polygon):
-        print(f'  Result: single connected polygon, {len(list(geom.interiors))} holes')
+        print(f'  Cut: single connected polygon, {len(list(geom.interiors))} holes')
     elif isinstance(geom, MultiPolygon):
-        print(f'  Result: {len(list(geom.geoms))} separate pieces (bridges may need adjustment)')
+        print(f'  Cut: {len(list(geom.geoms))} separate pieces (bridges may need adjustment)')
+
+    # Union score lines (individual letter outlines)
+    score_geom = None
+    if score_polys_raw:
+        print('Building score lines...')
+        score_geom = union_polygons(score_polys_raw)
+        if score_geom:
+            print(f'  Score lines ready')
 
     # Export
-    output = export_svg(geom, args.width, args.height, args.color, args.output)
+    output = export_svg(geom, args.width, args.height, args.color, args.output,
+                        score_geom=score_geom,
+                        cut_color=args.cut_color,
+                        score_color=args.score_color)
     print(f'Saved: {output}')
     print(f'  File size: {Path(output).stat().st_size / 1024:.1f} KB')
+    if args.score:
+        print(f'  Layers: CUT (red) + SCORE (blue hairline)')
 
 
 if __name__ == '__main__':
