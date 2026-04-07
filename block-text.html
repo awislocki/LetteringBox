@@ -534,7 +534,7 @@ LOVE+</textarea>
           showBoxes: els.showBoxes.checked,
         };
 
-        const parsedLines = parseLines(els.textInput.value, settings.sizeNudge);
+        let parsedLines = parseLines(els.textInput.value, settings.sizeNudge);
         if (!parsedLines.length) {
           els.previewHost.innerHTML = ''; els.svgCode.textContent = '';
           els.status.innerHTML = '<span class="warning">Enter at least one line.</span>';
@@ -542,6 +542,42 @@ LOVE+</textarea>
         }
 
         const targetWidth = settings.outputWidth - settings.paddingX * 2;
+
+        // Auto word-wrap: if a line has multiple words and would need a very
+        // small font to fit, break it into multiple lines at word boundaries.
+        // This handles pasting a single long sentence without manual line breaks.
+        const wrapped = [];
+        for (const pl of parsedLines) {
+          const words = pl.text.split(/\s+/);
+          if (words.length <= 2) { wrapped.push(pl); continue; }
+          // Measure the full line at base font size
+          const m = measureGlyphs(font, pl.text, settings.baseFontSize, settings.letterSpacing, settings.wordSpacing);
+          const fitScale = m.width > 0 ? targetWidth / m.width : 1;
+          // If the font would shrink below 40% of base size, wrap
+          if (fitScale < 0.4) {
+            // Greedy word wrap: pack words until they'd exceed targetWidth at a reasonable size
+            let currentWords = [];
+            let currentW = 0;
+            const targetFS = settings.baseFontSize * 0.7; // aim for ~70% of base
+            for (const word of words) {
+              const wm = measureGlyphs(font, word, targetFS, settings.letterSpacing, settings.wordSpacing);
+              const spaceW = currentWords.length > 0 ? measureGlyphs(font, ' ', targetFS, 0, 0).width + (settings.wordSpacing || 0) : 0;
+              if (currentW + spaceW + wm.width > targetWidth && currentWords.length > 0) {
+                wrapped.push({ text: currentWords.join(' '), modifier: pl.modifier });
+                currentWords = [word];
+                currentW = wm.width;
+              } else {
+                currentWords.push(word);
+                currentW += spaceW + wm.width;
+              }
+            }
+            if (currentWords.length) wrapped.push({ text: currentWords.join(' '), modifier: pl.modifier });
+          } else {
+            wrapped.push(pl);
+          }
+        }
+        parsedLines = wrapped;
+
         const built = parsedLines.map(line => lineToSvgPath(font, line, settings, targetWidth));
 
         const lineBlocks = [];
