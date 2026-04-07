@@ -219,15 +219,16 @@ function computeLayout(){
   const n=lines.length;
 
   // Binary search: largest font size where all lines fit
+  // Lines overlap vertically by weldPx so they physically connect
   let lo=4,hi=300,bestFS=4;
   for(let i=0;i<50;i++){
     const mid=(lo+hi)/2;
-    const totalH=n*mid+(n-1)*lineGap;
+    // Effective line stride = fontSize + lineGap - weldPx (overlap)
+    const stride=Math.max(mid*0.5, mid+lineGap-weldPx);
+    const totalH=mid+(n-1)*stride; // first line full height + remaining strides
     let allFit=totalH<=availH;
     if(allFit){
       for(const line of lines){
-        // Account for weld overlap: each char pair overlaps by weldPx,
-        // so effective width = natural width - (charCount-1)*weldPx
         const natW=measW(line,mid,font,bold);
         const effectiveW=natW-(line.length-1)*weldPx;
         if(effectiveW>availW){allFit=false;break}
@@ -236,14 +237,15 @@ function computeLayout(){
     if(allFit){bestFS=mid;lo=mid+0.05}else{hi=mid-0.05}
   }
 
-  const totalH=n*bestFS+(n-1)*lineGap;
+  const stride=Math.max(bestFS*0.5, bestFS+lineGap-weldPx);
+  const totalH=bestFS+(n-1)*stride;
   const startY=pad+(availH-totalH)/2;
 
-  // Per-line char positions
+  // Per-line char positions — lines overlap vertically by weldPx
   const layoutLines=[];
   for(let li=0;li<n;li++){
     const text=lines[li];
-    const y=startY+li*(bestFS+lineGap);
+    const y=startY+li*stride;
 
     // Measure each character and position with weld overlap
     const chars=[];
@@ -339,17 +341,20 @@ async function generateWelded(){
     }
   }
 
-  // Add vertical bridges between lines to ensure connectivity
+  // Vertical bridges between lines — fill any remaining gap in the overlap zone
+  // With weld overlap the lines should already touch, but bridges ensure it
   const bridgeW=Math.max(2,weldPx)*scale;
   for(let i=0;i<lines.length-1;i++){
     const ln=lines[i];
     const next=lines[i+1];
-    const topY=(ln.y+bestFS)*scale;
-    const botY=next.y*scale+bestFS*scale*0.2;
-    // Bridges at 20%, 40%, 60%, 80% of width
-    for(const frac of[0.2,0.4,0.6,0.8]){
-      const bx=pad*scale+availW*scale*frac;
-      ctx.fillRect(bx-bridgeW/2, topY, bridgeW, botY-topY);
+    // Bridge spans from bottom of current line to top area of next line
+    const topY=(ln.y+bestFS*0.75)*scale;
+    const botY=(next.y+bestFS*0.25)*scale;
+    if(botY>topY){
+      for(const frac of[0.15,0.3,0.5,0.7,0.85]){
+        const bx=pad*scale+availW*scale*frac;
+        ctx.fillRect(bx-bridgeW/2, topY, bridgeW, botY-topY);
+      }
     }
   }
 
