@@ -251,17 +251,16 @@ function computeLayout() {
       if (ew <= innerW) { fs = mid; lo = mid + 0.01; } else { hi = mid - 0.01; }
     }
 
-    // Apply +/- boost (each step = 12%)
-    fs *= Math.max(0.3, 1 + p.boost * 0.12);
-
     // Compute horizontal stretch so this line fills innerW exactly
     const natW = measureText(p.text, fs, font).width +
                  (p.text.length - 1) * fs * letterSpacePct / 100;
     const scaleX = innerW / natW;
 
     // Vertical stretch: fill lineH, plus overlap into neighbors
+    // +/- boost applies HERE — makes text taller/shorter without changing width
+    const boostFactor = Math.max(0.3, 1 + p.boost * 0.15);
     const overlapExtra = 1 + lineOverlapPct / 100;
-    const scaleY = (lineH / fs) * overlapExtra;
+    const scaleY = (lineH / fs) * overlapExtra * boostFactor;
 
     // Baseline position: center vertically in slot
     const y = pad + i * lineH;
