@@ -184,28 +184,28 @@ function computeLayout(){
   const availW=W-pad*2;
   const availH=H-pad*2;
 
-  // Base line height = availH/n. Boosts shift height: each + adds 15%, each - removes 15%.
-  // Calculate weighted heights so total = availH
-  const weights=parsed.map(p=>Math.max(0.3, 1+p.boost*0.15));
-  const totalWeight=weights.reduce((s,w)=>s+w,0);
-  const lineHeights=weights.map(w=>availH*w/totalWeight);
+  // Every line gets equal height. No gaps.
+  const lineH=availH/n;
 
   // Layout each line
   const layoutLines=[];
   let cy=pad;
   for(let li=0;li<n;li++){
     const text=parsed[li].text;
-    const lineH=lineHeights[li];
+    const boost=parsed[li].boost; // +/- font size modifier
     const y=cy;
     cy+=lineH;
 
     // Binary search for font size that fills availW
-    // Font size capped at lineH * 1.1 (slight overflow ok for vertical touching)
     let lo=4,hi=lineH*1.5,bestFS=4;
     for(let i=0;i<40;i++){
       const mid=(lo+hi)/2;
       if(measW(text,mid,font)<=availW&&mid<=lineH*1.1){bestFS=mid;lo=mid+0.01}else{hi=mid-0.01}
     }
+
+    // Apply +/- boost: each + adds 15% to font size, each - removes 15%
+    // Font can exceed lineH — it overflows into neighbors, welded together
+    bestFS*=Math.max(0.3, 1+boost*0.15);
 
     // Per-character positions with horizontal stretch
     const chars=[];
