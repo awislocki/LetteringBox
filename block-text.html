@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Block Text Generator — Weld &amp; Score</title>
 <link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=Stardos+Stencil:wght@400;700&family=Oswald:wght@400;700&family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Teko:wght@400;700&family=Russo+One&family=Bungee&family=Permanent+Marker&family=Staatliches&family=Passion+One:wght@400;700;900&family=Saira+Stencil+One&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 <style>
 :root{--bg:#0f0f1a;--sf:#161625;--s2:#1a1a35;--ac:#2a9d8f;--ac2:#e94560;--tx:#eee;--dm:#888;--bd:#2a2a3a}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -46,13 +47,17 @@ input[type="color"]{border:1px solid var(--bd);border-radius:3px;padding:1px}
 .layers{display:flex;gap:6px;margin-top:6px}
 .layer{display:flex;align-items:center;gap:4px;font-size:.66rem;color:var(--dm)}
 .layer-dot{width:10px;height:10px;border-radius:2px}
+.mode-tabs{display:flex;gap:2px;margin-bottom:8px}
+.mode-tab{flex:1;text-align:center;padding:5px;font-size:.7rem;cursor:pointer;border:1px solid var(--bd);border-radius:4px;transition:all .15s;color:var(--dm)}
+.mode-tab:hover{border-color:var(--ac)}
+.mode-tab.active{background:rgba(42,157,143,.2);border-color:var(--ac);color:var(--tx)}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="side">
   <h1>Block Text Generator</h1>
-  <p class="sub">Weld &amp; Score — like Cuttle.xyz</p>
+  <p class="sub">Weld &amp; Score — all letters joined as one cuttable piece</p>
   <div class="nav">
     <a href="index.html">Shape Cutter</a>
     <a href="block-text.html" class="active">Block Text</a>
@@ -74,7 +79,7 @@ The dread of eternal love</textarea>
     </div>
     <div class="row" style="margin-top:6px">
       <div><label>Padding</label><input type="number" id="pad" value="10" min="0" max="50"></div>
-      <div><label>Line gap</label><input type="number" id="gap" value="4" min="0" max="30"></div>
+      <div><label>Line gap</label><input type="number" id="gap" value="2" min="0" max="30"></div>
     </div>
   </div>
 
@@ -113,17 +118,11 @@ The dread of eternal love</textarea>
     <div class="st">Options</div>
     <div class="toggle-row"><label style="margin:0">All uppercase</label><label class="toggle"><input type="checkbox" id="caps" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <div class="toggle-row"><label style="margin:0">Bold</label><label class="toggle"><input type="checkbox" id="bold" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label style="margin:0">Show score lines</label><label class="toggle"><input type="checkbox" id="showScore" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label style="margin:0">Weld (overlap letters)</label><label class="toggle"><input type="checkbox" id="weld" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div style="margin-top:4px">
-      <label>Letter spacing (em)</label>
-      <input type="range" id="ls" min="-15" max="5" value="-4">
-      <span class="hint" id="lsVal">-0.04em</span>
-    </div>
-    <div style="margin-top:4px">
-      <label>Weld overlap (px)</label>
-      <input type="range" id="overlap" min="0" max="20" value="3">
-      <span class="hint" id="overlapVal">3px</span>
+    <div class="toggle-row"><label style="margin:0">Score lines (letter outlines)</label><label class="toggle"><input type="checkbox" id="showScore" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div style="margin-top:6px">
+      <label>Weld strength (letter overlap px)</label>
+      <input type="range" id="weldPx" min="0" max="10" value="2">
+      <span class="hint" id="weldVal">2px — letters overlap to connect</span>
     </div>
   </div>
 
@@ -136,21 +135,26 @@ The dread of eternal love</textarea>
   </div>
 
   <div class="s">
-    <button class="btn btn-p" onclick="generate()">Generate</button>
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode="preview" onclick="setMode('preview')">Preview</div>
+      <div class="mode-tab" data-mode="welded" onclick="setMode('welded')">Welded Vector</div>
+    </div>
+    <button class="btn btn-p" onclick="generateCurrent()">Generate</button>
     <button class="btn btn-s" onclick="exportSVG()">Export SVG</button>
     <div class="status" id="status"></div>
   </div>
 
   <div class="layers">
-    <div class="layer"><div class="layer-dot" style="background:#000"></div>Fill (engrave)</div>
-    <div class="layer"><div class="layer-dot" style="background:#F00"></div>Cut (outline)</div>
-    <div class="layer"><div class="layer-dot" style="background:#00F"></div>Score (letters)</div>
+    <div class="layer"><div class="layer-dot" style="background:#000"></div>Fill</div>
+    <div class="layer"><div class="layer-dot" style="background:#F00"></div>Cut outline</div>
+    <div class="layer"><div class="layer-dot" style="background:#00F"></div>Score</div>
   </div>
 
   <div class="note">
-    <b>How it works:</b> Type text, each line fills the block width. Letters are <em>welded</em> together
-    (overlapped so the piece is connected) and <em>score lines</em> mark individual letter boundaries
-    for engraving. Export SVG with standard laser color coding: red=cut, blue=score, black=engrave.
+    <b>How it works:</b> Letters are rendered overlapping so dots (i, j, !) and all pieces
+    physically connect. <b>Preview</b> mode shows the text layout. <b>Welded Vector</b> mode
+    traces the bitmap into a single connected &lt;path&gt; — ready for laser cutting.
+    Score lines mark letter boundaries for engraving.
   </div>
 </div>
 
@@ -165,32 +169,37 @@ The dread of eternal love</textarea>
 </div>
 
 <canvas id="mc" style="display:none"></canvas>
+<canvas id="weldCanvas" style="display:none"></canvas>
 
 <script>
-let zm=1,svgOut=null;
-const mctx=(()=>{const c=document.getElementById('mc');c.width=2000;c.height=200;return c.getContext('2d')})();
+let zm=1, svgOut=null, curMode='preview', lastLayout=null;
 
-document.getElementById('ls').oninput=function(){document.getElementById('lsVal').textContent=(this.value/100).toFixed(2)+'em'};
-document.getElementById('overlap').oninput=function(){document.getElementById('overlapVal').textContent=this.value+'px'};
+const mctx=(()=>{const c=document.getElementById('mc');c.width=3000;c.height=300;return c.getContext('2d')})();
 
-function aZ(){const s=document.getElementById('pvSvg');if(s){s.style.transform=`scale(${zm})`;s.style.transformOrigin='top center'}}
+document.getElementById('weldPx').oninput=function(){
+  document.getElementById('weldVal').textContent=this.value+'px'+(this.value>0?' — letters overlap to connect':' — no overlap');
+};
+
+function aZ(){const s=document.querySelector('#pvB svg');if(s){s.style.transform=`scale(${zm})`;s.style.transformOrigin='top center'}}
+
+function setMode(m){
+  curMode=m;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
+  generateCurrent();
+}
+
+function generateCurrent(){
+  if(curMode==='preview')generatePreview();
+  else generateWelded();
+}
 
 function measW(text,fs,font,bold){
   mctx.font=`${bold?'900':'700'} ${fs}px ${font}`;
   return mctx.measureText(text).width;
 }
 
-function measFull(text,fs,font,bold){
-  mctx.font=`${bold?'900':'700'} ${fs}px ${font}`;
-  const m=mctx.measureText(text);
-  return{
-    w:m.width,
-    asc:m.actualBoundingBoxAscent||fs*0.8,
-    desc:m.actualBoundingBoxDescent||fs*0.2
-  };
-}
-
-function generate(){
+// ========== LAYOUT ==========
+function computeLayout(){
   const raw=document.getElementById('txtIn').value;
   const W=parseInt(document.getElementById('bw').value);
   const H=parseInt(document.getElementById('bh').value);
@@ -199,117 +208,218 @@ function generate(){
   const font=document.getElementById('font').value;
   const caps=document.getElementById('caps').checked;
   const bold=document.getElementById('bold').checked;
-  const showScore=document.getElementById('showScore').checked;
-  const doWeld=document.getElementById('weld').checked;
-  const lsEm=parseInt(document.getElementById('ls').value)/100;
-  const overlap=parseInt(document.getElementById('overlap').value);
-  const fillColor=document.getElementById('fillColor').value;
-  const scoreColor=document.getElementById('scoreColor').value;
+  const weldPx=parseInt(document.getElementById('weldPx').value);
 
-  // Parse lines
   const srcLines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
-  if(!srcLines.length)return;
+  if(!srcLines.length)return null;
 
   const lines=srcLines.map(l=>caps?l.toUpperCase():l);
   const availW=W-pad*2;
   const availH=H-pad*2;
+  const n=lines.length;
 
-  // Binary search for font size: all lines must fit vertically
-  // Total height = n*fontSize + (n-1)*lineGap
-  let lo=4,hi=200,bestFS=4;
-  for(let i=0;i<40;i++){
+  // Binary search: largest font size where all lines fit
+  let lo=4,hi=300,bestFS=4;
+  for(let i=0;i<50;i++){
     const mid=(lo+hi)/2;
-    const totalH=lines.length*mid+(lines.length-1)*lineGap;
-    // Check all lines fit horizontally too
+    const totalH=n*mid+(n-1)*lineGap;
     let allFit=totalH<=availH;
     if(allFit){
       for(const line of lines){
-        if(measW(line,mid,font,bold)>availW){allFit=false;break}
+        // Account for weld overlap: each char pair overlaps by weldPx,
+        // so effective width = natural width - (charCount-1)*weldPx
+        const natW=measW(line,mid,font,bold);
+        const effectiveW=natW-(line.length-1)*weldPx;
+        if(effectiveW>availW){allFit=false;break}
       }
     }
     if(allFit){bestFS=mid;lo=mid+0.05}else{hi=mid-0.05}
   }
 
-  // Layout each line: centered vertically and horizontally
-  const totalH=lines.length*bestFS+(lines.length-1)*lineGap;
+  const totalH=n*bestFS+(n-1)*lineGap;
   const startY=pad+(availH-totalH)/2;
 
+  // Per-line char positions
   const layoutLines=[];
-  for(let i=0;i<lines.length;i++){
-    const text=lines[i];
-    const y=startY+i*(bestFS+lineGap);
-    const lineW=measW(text,bestFS,font,bold);
+  for(let li=0;li<n;li++){
+    const text=lines[li];
+    const y=startY+li*(bestFS+lineGap);
 
-    // Stretch: scale each line to fill availW exactly
-    const scaleX=availW/lineW;
-    const scaledFS=bestFS; // keep font size, stretch via transform or letter-spacing
-
-    // Calculate per-character positions for scoring and welding
+    // Measure each character and position with weld overlap
     const chars=[];
-    let cx=pad;
-    const charSpacing=((availW-lineW)/Math.max(1,text.length-1));
-
-    // Simpler: use textLength to stretch, but for score lines we need char positions
-    // Measure each char individually
-    let totalCharW=0;
-    const charWidths=[];
-    for(const ch of text){
-      const cw=measW(ch,bestFS,font,bold);
-      charWidths.push(cw);
-      totalCharW+=cw;
-    }
-    // Distribute extra space evenly between characters
-    const extraSpace=(availW-totalCharW)/(text.length>1?text.length-1:1);
-
-    let charX=pad;
+    let cx=0;
     for(let ci=0;ci<text.length;ci++){
-      const m=measFull(text[ci],bestFS,font,bold);
-      chars.push({ch:text[ci],x:charX,w:charWidths[ci],asc:m.asc,desc:m.desc});
-      charX+=charWidths[ci]+extraSpace;
+      const cw=measW(text[ci],bestFS,font,bold);
+      chars.push({ch:text[ci],x:cx,w:cw});
+      cx+=cw-weldPx; // overlap by weldPx
+    }
+    const lineNatW=cx+weldPx; // undo last overlap
+
+    // Center line horizontally, stretching to fill availW
+    const scale=availW/lineNatW;
+    for(const c of chars){
+      c.x=pad+c.x*scale;
+      c.w*=scale;
     }
 
-    layoutLines.push({text,y,fs:bestFS,chars,lineW:availW});
+    layoutLines.push({text,y,fs:bestFS,chars});
   }
 
-  // Build SVG
+  lastLayout={lines:layoutLines,W,H,pad,availW,availH,totalH,startY,bestFS,font,bold,weldPx,lineGap};
+  return lastLayout;
+}
+
+// ========== PREVIEW MODE ==========
+function generatePreview(){
+  const L=computeLayout();
+  if(!L)return;
+  const{lines,W,H,pad,availW,totalH,startY,bestFS,font,bold}=L;
+  const fillColor=document.getElementById('fillColor').value;
+  const scoreColor=document.getElementById('scoreColor').value;
+  const showScore=document.getElementById('showScore').checked;
+
   const parts=[`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`];
 
-  // For each line, render the welded text block
-  for(const ln of layoutLines){
-    const baseline=ln.y+ln.fs*0.82;
-
-    if(doWeld){
-      // WELDED: render text with textLength stretching + negative letter-spacing for overlap
-      // Use a single <text> with textLength to fill the width
-      parts.push(`  <text x="${pad}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="${bold?'900':'700'}" fill="${fillColor}" textLength="${availW}" lengthAdjust="spacing">${esc(ln.text)}</text>`);
-    } else {
-      // NON-WELDED: individual characters
-      for(const c of ln.chars){
-        parts.push(`  <text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="${bold?'900':'700'}" fill="${fillColor}">${esc(c.ch)}</text>`);
-      }
+  for(const ln of lines){
+    const baseline=ln.y+bestFS*0.82;
+    // Render each character individually (welded = overlapping positions)
+    for(const c of ln.chars){
+      if(c.ch===' ')continue;
+      parts.push(`<text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${bestFS.toFixed(1)}" font-weight="${bold?'900':'700'}" fill="${fillColor}">${esc(c.ch)}</text>`);
     }
-
-    // SCORE LINES: thin strokes between each character
+    // Score lines on top
     if(showScore){
       for(const c of ln.chars){
         if(c.ch===' ')continue;
-        // Draw the character outline as a score line
-        parts.push(`  <text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="${bold?'900':'700'}" fill="none" stroke="${scoreColor}" stroke-width="0.3">${esc(c.ch)}</text>`);
+        parts.push(`<text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${bestFS.toFixed(1)}" font-weight="${bold?'900':'700'}" fill="none" stroke="${scoreColor}" stroke-width="0.3">${esc(c.ch)}</text>`);
       }
     }
   }
 
-  // Cut outline: rectangle border
-  parts.push(`  <rect x="${pad}" y="${startY.toFixed(1)}" width="${availW}" height="${totalH.toFixed(1)}" fill="none" stroke="#FF0000" stroke-width="0.5"/>`);
-
+  // Cut outline
+  parts.push(`<rect x="${pad}" y="${startY.toFixed(1)}" width="${availW}" height="${totalH.toFixed(1)}" fill="none" stroke="#FF0000" stroke-width="0.5"/>`);
   parts.push('</svg>');
   svgOut=parts.join('\n');
+  renderSVG(svgOut);
+  document.getElementById('status').textContent=`Preview: ${lines.length} lines, font ${bestFS.toFixed(1)}px`;
+}
 
-  document.getElementById('pvB').innerHTML=svgOut;
+// ========== WELDED VECTOR MODE ==========
+async function generateWelded(){
+  const L=computeLayout();
+  if(!L)return;
+  if(typeof ImageTracer==='undefined'){
+    document.getElementById('status').textContent='ImageTracer not loaded — check internet';return;
+  }
+
+  const{lines,W,H,pad,availW,totalH,startY,bestFS,font,bold,weldPx}=L;
+  const fillColor=document.getElementById('fillColor').value;
+  const scoreColor=document.getElementById('scoreColor').value;
+  const showScore=document.getElementById('showScore').checked;
+  const stat=s=>{document.getElementById('status').textContent=s};
+
+  stat('Rendering to canvas...');
+  await new Promise(r=>setTimeout(r,20));
+
+  // Render to high-res canvas
+  const scale=3;
+  const cw=W*scale, ch=H*scale;
+  const canvas=document.getElementById('weldCanvas');
+  canvas.width=cw;canvas.height=ch;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,cw,ch);
+  ctx.fillStyle='#000';
+
+  for(const ln of lines){
+    const baseline=(ln.y+bestFS*0.82)*scale;
+    for(const c of ln.chars){
+      if(c.ch===' ')continue;
+      ctx.font=`${bold?'900':'700'} ${(bestFS*scale).toFixed(1)}px ${font}`;
+      ctx.fillText(c.ch, c.x*scale, baseline);
+    }
+  }
+
+  // Add vertical bridges between lines to ensure connectivity
+  const bridgeW=Math.max(2,weldPx)*scale;
+  for(let i=0;i<lines.length-1;i++){
+    const ln=lines[i];
+    const next=lines[i+1];
+    const topY=(ln.y+bestFS)*scale;
+    const botY=next.y*scale+bestFS*scale*0.2;
+    // Bridges at 20%, 40%, 60%, 80% of width
+    for(const frac of[0.2,0.4,0.6,0.8]){
+      const bx=pad*scale+availW*scale*frac;
+      ctx.fillRect(bx-bridgeW/2, topY, bridgeW, botY-topY);
+    }
+  }
+
+  // Trace with ImageTracer
+  stat('Tracing welded vectors...');
+  await new Promise(r=>setTimeout(r,20));
+
+  const imgd=ctx.getImageData(0,0,cw,ch);
+  let tracedSvg;
+  try{
+    tracedSvg=ImageTracer.imagedataToSVG(imgd,{
+      ltres:1,qtres:1,pathomit:8,
+      colorsampling:0,numberofcolors:2,
+      rightangleenhance:true,
+      scale:1/scale
+    });
+  }catch(e){
+    stat('Tracing failed: '+e.message);return;
+  }
+
+  // Extract dark paths from traced SVG
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(tracedSvg,'image/svg+xml');
+  const paths=doc.querySelectorAll('path');
+  const darkPaths=[];
+  for(const p of paths){
+    const fill=p.getAttribute('fill')||'';
+    let isDark=false;
+    if(fill.startsWith('rgb')){
+      const m=fill.match(/\d+/g);
+      if(m&&parseInt(m[0])<128)isDark=true;
+    }else if(fill==='#000000'||fill==='#000'||fill==='black')isDark=true;
+    else if(fill.startsWith('#')&&fill.length>=7&&parseInt(fill.substring(1,3),16)<128)isDark=true;
+    if(isDark){const d=p.getAttribute('d');if(d)darkPaths.push(d)}
+  }
+  if(!darkPaths.length){
+    for(const p of paths){const d=p.getAttribute('d');if(d)darkPaths.push(d)}
+  }
+
+  // Build final SVG with welded cut path + score lines
+  const combinedD=darkPaths.join(' ');
+  const svgParts=[`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`];
+
+  // Welded fill
+  svgParts.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
+
+  // Cut outline (the welded shape boundary)
+  svgParts.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.3"/>`);
+
+  // Score lines: individual letter outlines drawn on top
+  if(showScore){
+    for(const ln of lines){
+      const baseline=ln.y+bestFS*0.82;
+      for(const c of ln.chars){
+        if(c.ch===' ')continue;
+        svgParts.push(`  <text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${bestFS.toFixed(1)}" font-weight="${bold?'900':'700'}" fill="none" stroke="${scoreColor}" stroke-width="0.3">${esc(c.ch)}</text>`);
+      }
+    }
+  }
+
+  svgParts.push('</svg>');
+  svgOut=svgParts.join('\n');
+  renderSVG(svgOut);
+  stat(`Welded: ${darkPaths.length} paths, ${(combinedD.length/1024).toFixed(0)}KB`);
+}
+
+function renderSVG(svg){
+  document.getElementById('pvB').innerHTML=svg;
   const el=document.getElementById('pvB').querySelector('svg');
-  if(el){el.id='pvSvg';el.style.transform=`scale(${zm})`;el.style.transformOrigin='top center'}
-
-  document.getElementById('status').textContent=`${lines.length} lines, font ${bestFS.toFixed(1)}px`;
+  if(el){el.style.transform=`scale(${zm})`;el.style.transformOrigin='top center'}
 }
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -322,19 +432,20 @@ function exportSVG(){
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
 }
 
-// Auto-generate on changes
-['txtIn','bw','bh','pad','gap','font','ls','overlap'].forEach(id=>{
-  const el=document.getElementById(id);
-  el.addEventListener('input',()=>{clearTimeout(el._t);el._t=setTimeout(generate,300)});
+// Auto-regenerate on input changes (preview mode only — welded is manual)
+let regenT;
+function autoRegen(){if(curMode==='preview'){clearTimeout(regenT);regenT=setTimeout(generatePreview,300)}}
+['txtIn','bw','bh','pad','gap','font','weldPx'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',autoRegen);
 });
-['caps','bold','showScore','weld'].forEach(id=>{
-  document.getElementById(id).addEventListener('change',generate);
+['caps','bold','showScore'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',autoRegen);
 });
 ['fillColor','scoreColor'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',generate);
+  document.getElementById(id).addEventListener('input',autoRegen);
 });
 
-setTimeout(generate,200);
+setTimeout(generatePreview,300);
 </script>
 </body>
 </html>
