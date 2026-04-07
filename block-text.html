@@ -131,6 +131,7 @@ LOVE</textarea>
     <div class="group-title">Options</div>
     <div class="toggle-row"><label>Uppercase</label><label class="toggle"><input type="checkbox" id="uppercase" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <div class="toggle-row"><label>Score lines (letter outlines)</label><label class="toggle"><input type="checkbox" id="scoreLines" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div class="toggle-row"><label>Outline view (see cut lines)</label><label class="toggle"><input type="checkbox" id="outlineView"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
   </div>
 
   <!-- Colors -->
@@ -370,9 +371,15 @@ async function render() {
 
   // Fill layer
   // The welded path IS the cut — laser cuts around these letters.
-  // Fill for preview visibility + hairline stroke for the actual cut line.
-  svg.push(`  <!-- CUT: welded text outline — laser cuts this path -->`)
-  svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="${fillColor}" stroke-width="0.01"/>`);
+  const outlineView = document.getElementById('outlineView').checked;
+  svg.push(`  <!-- CUT: welded text — laser cuts this path -->`);
+  if (outlineView) {
+    // Outline only — see exactly what the laser cuts
+    svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.5"/>`);
+  } else {
+    // Filled — see what the finished piece looks like
+    svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="${fillColor}" stroke-width="0.01"/>`);
+  }
 
 
   // Score layer
@@ -471,7 +478,7 @@ function scheduleRegen() { clearTimeout(regenTimer); regenTimer = setTimeout(ren
 
 ['inputText', 'blockW', 'blockH', 'padding', 'fontFamily', 'letterSpace']
   .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
-['uppercase', 'scoreLines']
+['uppercase', 'scoreLines', 'outlineView']
   .forEach(id => document.getElementById(id).addEventListener('change', scheduleRegen));
 ['fillColor', 'scoreColor']
   .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
