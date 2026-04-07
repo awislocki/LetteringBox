@@ -1,266 +1,581 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Connected Block Text Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Oswald:wght@700&family=Passion+One:wght@900&family=Russo+One&family=Staatliches&family=Teko:wght@700&family=Allerta+Stencil&family=Saira+Stencil+One&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --bg:#111118; --panel:#1a1a26; --border:#2a2a3a; --accent:#2a9d8f; --warn:#e76f51; --text:#e8e8ee; --dim:#777; }
-body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
-.layout { display:grid; grid-template-columns:320px 1fr; height:100vh; }
-.sidebar { background:var(--panel); border-right:1px solid var(--border); padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
-.sidebar::-webkit-scrollbar{width:4px} .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-h1 { font-size:1.05rem; color:var(--accent); }
-.subtitle { font-size:.66rem; color:var(--dim); margin-top:-6px; }
-.nav { display:flex; gap:6px; }
-.nav a { font-size:.66rem; color:var(--accent); text-decoration:none; padding:3px 8px; border:1px solid var(--border); border-radius:3px; }
-.nav a:hover{border-color:var(--accent)} .nav a.active{background:rgba(42,157,143,.15);border-color:var(--accent)}
-.group { display:flex; flex-direction:column; gap:3px; }
-.group-title { font-size:.6rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--dim); }
-label { font-size:.72rem; color:var(--dim); }
-textarea { width:100%; min-height:90px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:7px; font-family:'Courier New',monospace; font-size:.78rem; line-height:1.3; resize:vertical; }
-textarea:focus,select:focus,input:focus{outline:none;border-color:var(--accent)}
-select,input[type="number"]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.74rem}
-input[type="range"]{width:100%;accent-color:var(--accent)}
-input[type="color"]{width:28px;height:22px;border:1px solid var(--border);border-radius:3px;padding:0;cursor:pointer}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.slider-row{display:flex;align-items:center;gap:6px}
-.slider-row input[type="range"]{flex:1}
-.slider-val{font-size:.66rem;color:var(--accent);min-width:36px;text-align:right}
-.btn{width:100%;padding:8px;border:none;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer}
-.btn-primary{background:var(--accent);color:#fff} .btn-primary:hover{background:#238b80}
-.btn-export{background:#1a3a5c;color:#8ab4f8;margin-top:2px} .btn-export:hover{background:#1e4470}
-.toggle-row{display:flex;align-items:center;justify-content:space-between}
-.toggle{position:relative;width:28px;height:15px;cursor:pointer;flex-shrink:0}
-.toggle input{display:none}
-.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:8px;transition:background .2s}
-.toggle input:checked+.toggle-track{background:var(--accent)}
-.toggle-thumb{position:absolute;top:1px;left:1px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .2s}
-.toggle input:checked~.toggle-thumb{transform:translateX(13px)}
-.status{font-size:.66rem;color:var(--dim);min-height:1em}
-.warn{color:var(--warn);font-weight:600}
-.note{font-size:.58rem;color:var(--dim);line-height:1.25;padding:6px;background:rgba(42,157,143,.05);border:1px solid rgba(42,157,143,.12);border-radius:4px}
-.preview{display:flex;align-items:center;justify-content:center;background:#0a0a10;position:relative;overflow:auto;padding:20px}
-.preview-card{background:#fff;border-radius:6px;padding:8px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
-.preview-controls{position:absolute;bottom:10px;display:flex;gap:4px}
-.preview-controls button{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:.64rem;cursor:pointer}
-.preview-controls button:hover{border-color:var(--accent)}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connected Block of Text Generator</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1f2430;
+      --text: #edf1f7;
+      --muted: #9ca7b8;
+      --border: #2a3242;
+      --accent: #68a0ff;
+      --danger: #ff7a7a;
+      --success: #74d99f;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border-right: 1px solid var(--border);
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: 1fr 220px;
+      min-width: 0;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 18px;
+    }
+
+    .nav { display: flex; gap: 6px; margin-bottom: 14px; }
+    .nav a { font-size: 12px; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; }
+    .nav a:hover { border-color: var(--accent); }
+    .nav a.active { background: rgba(104,160,255,.12); border-color: var(--accent); }
+
+    .group {
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+      box-shadow: var(--shadow);
+    }
+
+    .group h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    textarea, select, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0d1016;
+      color: var(--text);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.35;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 8px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .check input { width: auto; }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #121826;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #08111f;
+      border-color: transparent;
+    }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .status { margin-top: 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+    .warning { color: var(--danger); font-weight: 600; }
+    .ok { color: var(--success); font-weight: 600; }
+
+    .preview-wrap {
+      position: relative;
+      overflow: auto;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.03) 75%),
+        linear-gradient(45deg, rgba(255,255,255,.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.03) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,17,21,.9);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      backdrop-filter: blur(8px);
+    }
+
+    .preview-stage {
+      min-height: calc(100% - 54px);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    #previewHost {
+      width: min(100%, 1100px);
+      min-height: 300px;
+      display: grid;
+      place-items: center;
+    }
+
+    #previewHost svg {
+      width: 100%;
+      height: auto;
+      max-height: calc(100vh - 360px);
+      background: white;
+      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+      border-radius: 12px;
+    }
+
+    .code-panel {
+      border-top: 1px solid var(--border);
+      background: #0c0f14;
+      overflow: auto;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #d8e1f0;
+      font-size: 12px;
+      line-height: 1.4;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tiny { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .main { grid-template-rows: 60vh 240px; }
+      #previewHost svg { max-height: 50vh; }
+    }
+  </style>
 </head>
 <body>
-<div class="layout">
-<div class="sidebar">
-  <div><h1>Connected Block Text</h1><p class="subtitle">Every letter joined. One cuttable piece.</p></div>
-  <div class="nav"><a href="index.html">Shape Cutter</a><a href="block-text.html" class="active">Block Text</a></div>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>Connected Block Text</h1>
+      <div class="subtle">
+        Multiline text scaled per line to fill the width. Exported as laser-cut-friendly SVG with actual vector letter outlines. Add a trailing <strong>+</strong> or <strong>-</strong> to any line to nudge its size.
+      </div>
+      <div class="nav">
+        <a href="index.html">Shape Cutter</a>
+        <a href="block-text.html" class="active">Block Text</a>
+      </div>
 
-  <div class="group">
-    <div class="group-title">Text</div>
-    <textarea id="inputText">EVERY DAY
+      <div class="group">
+        <h2>Text</h2>
+        <label for="textInput">Multiline content</label>
+        <textarea id="textInput">EVERY DAY
 AND EVERY
-DARK NIGHT
+DARK NIGHT+
 THE DREAD
 OF ETERNAL
-LOVE</textarea>
-    <p style="font-size:.58rem;color:var(--dim)">One line per row. Add <b>+++</b> or <b>---</b> at end to adjust that line's height.</p>
+LOVE+</textarea>
+        <div class="tiny">A trailing + increases that line's size. A trailing - decreases it.</div>
+      </div>
+
+      <div class="group">
+        <h2>Typography</h2>
+        <div class="row">
+          <div>
+            <label for="fontSelect">Font</label>
+            <select id="fontSelect">
+              <option value="https://cdn.jsdelivr.net/npm/@fontsource/inter/files/inter-latin-700-normal.woff">Inter Bold</option>
+              <option value="https://cdn.jsdelivr.net/npm/@fontsource/oswald/files/oswald-latin-700-normal.woff" selected>Oswald Bold</option>
+              <option value="https://cdn.jsdelivr.net/npm/@fontsource/montserrat/files/montserrat-latin-700-normal.woff">Montserrat Bold</option>
+              <option value="https://cdn.jsdelivr.net/npm/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff">Bebas Neue</option>
+              <option value="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff">Playfair Display Bold</option>
+            </select>
+          </div>
+          <div>
+            <label for="baseFontSize">Base size</label>
+            <input id="baseFontSize" type="number" min="20" max="400" step="1" value="120" />
+          </div>
+        </div>
+        <div class="row-3" style="margin-top:10px;">
+          <div>
+            <label for="lineSpacing">Line spacing</label>
+            <input id="lineSpacing" type="number" min="-80" max="200" step="1" value="8" />
+          </div>
+          <div>
+            <label for="letterSpacing">Letter spacing</label>
+            <input id="letterSpacing" type="number" min="-40" max="80" step="0.5" value="-6" />
+          </div>
+          <div>
+            <label for="sizeNudge">+/- nudge %</label>
+            <input id="sizeNudge" type="number" min="1" max="50" step="1" value="8" />
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Layout</h2>
+        <div class="row-3">
+          <div>
+            <label for="outputWidth">Artboard width</label>
+            <input id="outputWidth" type="number" min="200" max="3000" step="1" value="1000" />
+          </div>
+          <div>
+            <label for="paddingX">Horizontal padding</label>
+            <input id="paddingX" type="number" min="0" max="300" step="1" value="40" />
+          </div>
+          <div>
+            <label for="paddingY">Vertical padding</label>
+            <input id="paddingY" type="number" min="0" max="300" step="1" value="40" />
+          </div>
+        </div>
+        <div class="row-3" style="margin-top:10px;">
+          <div>
+            <label for="verticalOverlap">Vertical overlap</label>
+            <input id="verticalOverlap" type="number" min="0" max="80" step="0.5" value="14" />
+          </div>
+          <div>
+            <label for="connectorWidth">Connector width</label>
+            <input id="connectorWidth" type="number" min="0" max="40" step="0.5" value="4" />
+          </div>
+          <div>
+            <label for="exportScale">Export scale</label>
+            <input id="exportScale" type="number" min="0.1" max="10" step="0.1" value="1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Output</h2>
+        <label class="check"><input id="scoreLines" type="checkbox" checked /> Score lines between letters</label>
+        <label class="check"><input id="drawConnectors" type="checkbox" checked /> Weld bridges between letters and lines</label>
+        <label class="check"><input id="showBoxes" type="checkbox" /> Debug bounds</label>
+        <div class="button-row" style="margin-top:12px;">
+          <button id="downloadSvg" class="primary">Download SVG</button>
+          <button id="copySvg">Copy SVG</button>
+          <button id="rebuild">Rebuild</button>
+        </div>
+        <div id="status" class="status"></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="preview-wrap">
+        <div class="preview-toolbar">
+          <div>Live preview</div>
+          <div class="tiny">Cut = black fill paths &nbsp;|&nbsp; Score = blue stroke</div>
+        </div>
+        <div class="preview-stage">
+          <div id="previewHost"></div>
+        </div>
+      </div>
+      <div class="code-panel">
+        <pre id="svgCode"></pre>
+      </div>
+    </section>
   </div>
 
-  <div class="group">
-    <div class="group-title">Block Size</div>
-    <div class="row">
-      <div><label>Width</label><input type="number" id="blockW" value="400" min="50" max="2000" step="10"></div>
-      <div><label>Height</label><input type="number" id="blockH" value="400" min="50" max="2000" step="10"></div>
-    </div>
-  </div>
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <script>
+    const els = {
+      textInput: document.getElementById('textInput'),
+      fontSelect: document.getElementById('fontSelect'),
+      baseFontSize: document.getElementById('baseFontSize'),
+      lineSpacing: document.getElementById('lineSpacing'),
+      letterSpacing: document.getElementById('letterSpacing'),
+      sizeNudge: document.getElementById('sizeNudge'),
+      outputWidth: document.getElementById('outputWidth'),
+      paddingX: document.getElementById('paddingX'),
+      paddingY: document.getElementById('paddingY'),
+      verticalOverlap: document.getElementById('verticalOverlap'),
+      connectorWidth: document.getElementById('connectorWidth'),
+      exportScale: document.getElementById('exportScale'),
+      scoreLines: document.getElementById('scoreLines'),
+      drawConnectors: document.getElementById('drawConnectors'),
+      showBoxes: document.getElementById('showBoxes'),
+      previewHost: document.getElementById('previewHost'),
+      svgCode: document.getElementById('svgCode'),
+      status: document.getElementById('status'),
+      downloadSvg: document.getElementById('downloadSvg'),
+      copySvg: document.getElementById('copySvg'),
+      rebuild: document.getElementById('rebuild'),
+    };
 
-  <div class="group">
-    <div class="group-title">Font</div>
-    <select id="fontFamily">
-      <option value="Impact" selected>Impact</option>
-      <option value="Anton">Anton</option>
-      <option value="'Bebas Neue'">Bebas Neue</option>
-      <option value="Teko">Teko</option>
-      <option value="Oswald">Oswald</option>
-      <option value="Staatliches">Staatliches</option>
-      <option value="'Passion One'">Passion One</option>
-      <option value="'Russo One'">Russo One</option>
-      <option value="'Black Ops One'">Black Ops One</option>
-      <option value="'Allerta Stencil'">Allerta Stencil</option>
-      <option value="'Saira Stencil One'">Saira Stencil One</option>
-      <option value="'Arial Black'">Arial Black</option>
-      <option value="Arial">Arial</option>
-    </select>
-  </div>
+    let fontCache = new Map();
+    let lastSvg = '';
 
-  <div class="group">
-    <div class="group-title">Options</div>
-    <div class="toggle-row"><label>Uppercase</label><label class="toggle"><input type="checkbox" id="uppercase" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label>Score lines between letters</label><label class="toggle"><input type="checkbox" id="scoreLines" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-  </div>
-
-  <div class="group">
-    <div class="group-title">Colors</div>
-    <div class="row">
-      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="fillColor" value="#000000"><label>Fill</label></div>
-      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="scoreColor" value="#0000FF"><label>Score</label></div>
-    </div>
-  </div>
-
-  <div class="group">
-    <button class="btn btn-primary" onclick="generate()">Generate</button>
-    <button class="btn btn-export" onclick="download()">Download SVG</button>
-    <div class="status" id="status"></div>
-  </div>
-
-  <div class="note">
-    <b>How it works:</b> Each line is stretched to fill the block width using SVG <code>textLength</code>.
-    Lines are sized to fill the block height. The SVG text elements ARE the cut paths —
-    import into laser software, select all, convert text to path (Path → Object to Path in Inkscape),
-    then union (Path → Union). Result: one connected cuttable piece.
-    Score lines mark letter boundaries for optional engraving.
-  </div>
-</div>
-
-<div class="preview">
-  <div class="preview-card" id="previewCard"></div>
-  <div class="preview-controls">
-    <button onclick="zm=Math.min(zm*1.25,5);apZ()">+</button>
-    <button onclick="zm=Math.max(zm/1.25,.2);apZ()">&minus;</button>
-    <button onclick="zm=1;apZ()">1:1</button>
-  </div>
-</div>
-</div>
-
-<canvas id="mc" style="display:none"></canvas>
-
-<script>
-let zm = 1, svgOut = '';
-const mctx = (() => { const c = document.getElementById('mc'); c.width = 4000; c.height = 400; return c.getContext('2d'); })();
-function apZ() { const s = document.querySelector('#previewCard svg'); if (s) { s.style.transform = `scale(${zm})`; s.style.transformOrigin = 'top left'; } }
-
-function meas(text, fs, font) {
-  mctx.font = `900 ${fs}px ${font}`;
-  return mctx.measureText(text).width;
-}
-
-function generate() {
-  const raw = document.getElementById('inputText').value;
-  const W = +document.getElementById('blockW').value;
-  const H = +document.getElementById('blockH').value;
-  const font = document.getElementById('fontFamily').value;
-  const caps = document.getElementById('uppercase').checked;
-  const showScore = document.getElementById('scoreLines').checked;
-  const fillColor = document.getElementById('fillColor').value;
-  const scoreColor = document.getElementById('scoreColor').value;
-
-  // Parse lines + boost modifiers
-  const parsed = raw.split('\n').map(l => l.trim()).filter(l => l).map(l => {
-    let text = caps ? l.toUpperCase() : l;
-    let boost = 0;
-    const m = text.match(/(\++|-+)$/);
-    if (m) { boost = m[1][0] === '+' ? m[1].length : -m[1].length; text = text.slice(0, m.index).trim(); }
-    return { text, boost };
-  }).filter(p => p.text);
-
-  if (!parsed.length) return;
-  const n = parsed.length;
-
-  // Weighted line heights based on boost
-  const weights = parsed.map(p => Math.max(0.2, 1 + p.boost * 0.15));
-  const totalW = weights.reduce((s, w) => s + w, 0);
-  const lineHs = weights.map(w => H * w / totalW);
-
-  // Cumulative Y positions
-  let cy = 0;
-  const lineYs = lineHs.map(h => { const y = cy; cy += h; return y; });
-
-  // For each line: the text fills the full width via textLength,
-  // and the font size is set so the text fills the line height.
-  // We use a reference font size and let textLength handle the width.
-  const lines = parsed.map((p, i) => {
-    const lineH = lineHs[i];
-    const y = lineYs[i];
-
-    // Font size = line height. The text will be as tall as the line slot.
-    // textLength stretches it to fill the width.
-    const fs = lineH;
-
-    // Measure natural width at this font size (for score line char positions)
-    const natW = meas(p.text, fs, font);
-    const chars = [];
-    let cx = 0;
-    for (const ch of p.text) {
-      const cw = meas(ch, fs, font);
-      const ratio = cw / natW; // this char's share of total width
-      chars.push({ ch, x: cx, w: W * ratio });
-      cx += W * ratio;
+    function debounce(fn, ms = 120) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
 
-    return { text: p.text, y, fs, lineH, chars };
-  });
+    function escapeXml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    }
 
-  // Build SVG — the text elements ARE the cut geometry
-  const svg = [];
-  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
+    async function loadFont(url) {
+      if (fontCache.has(url)) return fontCache.get(url);
+      const font = await opentype.load(url);
+      fontCache.set(url, font);
+      return font;
+    }
 
-  // Each line is a <text> element stretched to fill the full width.
-  // Font size = line height so text fills vertically.
-  // textLength = block width so text fills horizontally.
-  // These are the actual shapes the laser cuts.
-  for (const ln of lines) {
-    const baseline = ln.y + ln.fs * 0.82;
-    svg.push(`  <text x="0" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="${fillColor}" textLength="${W}" lengthAdjust="spacingAndGlyphs">${esc(ln.text)}</text>`);
-  }
+    function parseLines(raw, nudgePct) {
+      return raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(line => {
+        let modifier = 1;
+        if (line.endsWith('+')) {
+          modifier = 1 + nudgePct / 100;
+          line = line.slice(0, -1).trimEnd();
+        } else if (line.endsWith('-')) {
+          modifier = 1 - nudgePct / 100;
+          line = line.slice(0, -1).trimEnd();
+        }
+        return { text: line, modifier };
+      });
+    }
 
-  // Score lines: thin strokes between characters and between rows
-  if (showScore) {
-    svg.push(`  <!-- SCORE: letter boundaries for engraving -->`);
-    for (const ln of lines) {
-      const baseline = ln.y + ln.fs * 0.82;
-      // Individual character outlines
-      for (const c of ln.chars) {
-        if (c.ch === ' ') continue;
-        svg.push(`  <text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.3" textLength="${c.w.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(c.ch)}</text>`);
+    function measureGlyphs(font, text, fontSize, letterSpacing) {
+      const scale = fontSize / font.unitsPerEm;
+      const glyphs = font.stringToGlyphs(text);
+      const items = [];
+      let x = 0;
+
+      for (let i = 0; i < glyphs.length; i++) {
+        const g = glyphs[i];
+        const next = glyphs[i + 1];
+        const advance = (g.advanceWidth || font.unitsPerEm * 0.5) * scale;
+        const kern = next ? font.getKerningValue(g, next) * scale : 0;
+        const glyphPath = g.getPath(x, 0, fontSize);
+        const bbox = glyphPath.getBoundingBox();
+        items.push({ glyph: g, x, advance, kern, path: glyphPath, bbox, index: i, char: text[i] || '' });
+        x += advance + kern + letterSpacing;
       }
-      // Vertical lines between characters
-      for (let ci = 1; ci < ln.chars.length; ci++) {
-        const x = ln.chars[ci].x;
-        svg.push(`  <line x1="${x.toFixed(1)}" y1="${ln.y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(ln.y + ln.lineH).toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
+
+      const valid = items.filter(i => Number.isFinite(i.bbox.x1) && Number.isFinite(i.bbox.x2));
+      const minX = valid.length ? Math.min(...valid.map(i => i.bbox.x1)) : 0;
+      const maxX = valid.length ? Math.max(...valid.map(i => i.bbox.x2)) : x;
+      const minY = valid.length ? Math.min(...valid.map(i => i.bbox.y1)) : -fontSize;
+      const maxY = valid.length ? Math.max(...valid.map(i => i.bbox.y2)) : 0;
+
+      return { glyphs: items, width: maxX - minX, minX, maxX, minY, maxY, height: maxY - minY,
+               ascender: font.ascender * scale, descender: Math.abs(font.descender * scale) };
+    }
+
+    function rectPath(x, y, w, h) {
+      return `M ${x} ${y} L ${x+w} ${y} L ${x+w} ${y+h} L ${x} ${y+h} Z`;
+    }
+
+    function lineToSvgPath(font, line, settings, targetWidth) {
+      const fontSize = settings.baseFontSize * line.modifier;
+      const initial = measureGlyphs(font, line.text, fontSize, settings.letterSpacing);
+      const fitScale = initial.width > 0 ? targetWidth / initial.width : 1;
+      const scaledFontSize = fontSize * fitScale;
+      const measured = measureGlyphs(font, line.text, scaledFontSize, settings.letterSpacing * fitScale);
+
+      let groupPath = '', scorePath = '', debugPath = '';
+      const connectors = [];
+      const leftOffset = -measured.minX;
+      const top = -measured.minY;
+
+      for (let i = 0; i < measured.glyphs.length; i++) {
+        const item = measured.glyphs[i];
+        const translated = item.glyph.getPath(item.x + leftOffset, top, scaledFontSize);
+        groupPath += translated.toPathData(3) + ' ';
+
+        const b = translated.getBoundingBox();
+        if (settings.showBoxes) debugPath += rectPath(b.x1, b.y1, Math.max(0.1, b.x2 - b.x1), Math.max(0.1, b.y2 - b.y1)) + ' ';
+
+        if (settings.drawConnectors && i < measured.glyphs.length - 1) {
+          const next = measured.glyphs[i + 1];
+          const nextTranslated = next.glyph.getPath(next.x + leftOffset, top, scaledFontSize);
+          const nb = nextTranslated.getBoundingBox();
+          const bridgeW = Math.max(settings.connectorWidth, (nb.x1 - b.x2) + settings.connectorWidth * 0.35);
+          const bridgeX = b.x2 - settings.connectorWidth * 0.5;
+          const bridgeY = Math.max(b.y1, nb.y1) + Math.min(b.y2 - b.y1, nb.y2 - nb.y1) * 0.56;
+          connectors.push(rectPath(bridgeX, bridgeY, bridgeW, settings.connectorWidth));
+
+          if (settings.scoreLines) {
+            const sx = (b.x2 + nb.x1) / 2;
+            scorePath += `M ${sx.toFixed(3)} ${Math.min(b.y1, nb.y1).toFixed(3)} L ${sx.toFixed(3)} ${Math.max(b.y2, nb.y2).toFixed(3)} `;
+          }
+        }
+      }
+
+      return { cutPath: (groupPath + connectors.join(' ')).trim(), scorePath: scorePath.trim(),
+               debugPath: debugPath.trim(), width: targetWidth, height: measured.height,
+               ascender: measured.ascender, descender: measured.descender, baselineTop: top, fontSize: scaledFontSize };
+    }
+
+    async function buildSvg() {
+      try {
+        els.status.textContent = 'Building...';
+        const font = await loadFont(els.fontSelect.value);
+
+        const settings = {
+          baseFontSize: +els.baseFontSize.value, lineSpacing: +els.lineSpacing.value,
+          letterSpacing: +els.letterSpacing.value, sizeNudge: +els.sizeNudge.value,
+          outputWidth: +els.outputWidth.value, paddingX: +els.paddingX.value,
+          paddingY: +els.paddingY.value, verticalOverlap: +els.verticalOverlap.value,
+          connectorWidth: +els.connectorWidth.value, exportScale: +els.exportScale.value,
+          scoreLines: els.scoreLines.checked, drawConnectors: els.drawConnectors.checked,
+          showBoxes: els.showBoxes.checked,
+        };
+
+        const parsedLines = parseLines(els.textInput.value, settings.sizeNudge);
+        if (!parsedLines.length) {
+          els.previewHost.innerHTML = ''; els.svgCode.textContent = '';
+          els.status.innerHTML = '<span class="warning">Enter at least one line.</span>';
+          return;
+        }
+
+        const targetWidth = settings.outputWidth - settings.paddingX * 2;
+        const built = parsedLines.map(line => lineToSvgPath(font, line, settings, targetWidth));
+
+        const lineBlocks = [];
+        let y = settings.paddingY;
+        let prevBottom = null;
+
+        for (let i = 0; i < built.length; i++) {
+          const line = built[i];
+          const lineTop = y;
+          const lineBottom = y + line.height;
+          const cutParts = [], scoreParts = [], debugParts = [];
+
+          cutParts.push(`<path d="${line.cutPath}" transform="translate(${settings.paddingX}, ${lineTop})" />`);
+          if (settings.scoreLines && line.scorePath)
+            scoreParts.push(`<path d="${line.scorePath}" transform="translate(${settings.paddingX}, ${lineTop})" />`);
+          if (settings.showBoxes && line.debugPath)
+            debugParts.push(`<path d="${line.debugPath}" transform="translate(${settings.paddingX}, ${lineTop})" />`);
+
+          if (settings.drawConnectors && prevBottom !== null) {
+            const bridgeY = prevBottom - settings.verticalOverlap;
+            const bridgeH = settings.verticalOverlap + settings.connectorWidth;
+            const bridgeX = settings.paddingX + settings.outputWidth * 0.18;
+            const bridgeW = settings.outputWidth * 0.64 - settings.paddingX;
+            cutParts.push(`<path d="${rectPath(bridgeX, bridgeY, bridgeW, bridgeH)}" />`);
+          }
+
+          lineBlocks.push({ cutParts, scoreParts, debugParts });
+          y += line.height + settings.lineSpacing - settings.verticalOverlap;
+          prevBottom = lineBottom;
+        }
+
+        const height = Math.max(100, y + settings.paddingY + settings.verticalOverlap);
+        const sw = settings.outputWidth * settings.exportScale;
+        const sh = height * settings.exportScale;
+
+        const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${sw}" height="${sh}" viewBox="0 0 ${settings.outputWidth} ${height}" fill="none">
+  <g id="cut-layer" fill="#000000" stroke="none">
+    ${lineBlocks.flatMap(b => b.cutParts).join('\n    ')}
+  </g>
+  <g id="score-layer" fill="none" stroke="#2563eb" stroke-width="0.8" vector-effect="non-scaling-stroke">
+    ${lineBlocks.flatMap(b => b.scoreParts).join('\n    ')}
+  </g>
+  <g id="debug-layer" fill="none" stroke="#ff00aa" stroke-width="0.5" opacity="0.45">
+    ${lineBlocks.flatMap(b => b.debugParts).join('\n    ')}
+  </g>
+</svg>`;
+
+        lastSvg = svg;
+        els.previewHost.innerHTML = svg;
+        els.svgCode.textContent = svg;
+
+        const warn = parsedLines.length > 1 && parsedLines.some(l => l.text.replace(/\s+/g, '').length < 3);
+        els.status.innerHTML = warn
+          ? '<span class="warning">Some lines are very short — disconnected islands likely. Increase connector width.</span>'
+          : '<span class="ok">Build complete. Verify connectivity in your laser/CAD software.</span>';
+      } catch (err) {
+        console.error(err);
+        els.status.innerHTML = `<span class="warning">Build failed: ${escapeXml(err.message || String(err))}</span>`;
       }
     }
-    // Horizontal lines between rows
-    for (let i = 1; i < lines.length; i++) {
-      svg.push(`  <line x1="0" y1="${lines[i].y.toFixed(1)}" x2="${W}" y2="${lines[i].y.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
-    }
-  }
 
-  svg.push('</svg>');
-  svgOut = svg.join('\n');
+    const rebuild = debounce(buildSvg, 120);
 
-  document.getElementById('previewCard').innerHTML = svgOut;
-  apZ();
-  document.getElementById('status').textContent = `${n} lines — Import into Inkscape → Select All → Path → Object to Path → Path → Union`;
-}
+    Object.values(els).forEach(el => {
+      if (el && el.tagName && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+        el.addEventListener('input', rebuild);
+        el.addEventListener('change', rebuild);
+      }
+    });
 
-function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    els.rebuild.addEventListener('click', buildSvg);
 
-function download() {
-  if (!svgOut) return;
-  const b = new Blob([svgOut], { type: 'image/svg+xml' });
-  const u = URL.createObjectURL(b);
-  const a = document.createElement('a'); a.href = u; a.download = `block-text-${Date.now()}.svg`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u);
-}
+    els.downloadSvg.addEventListener('click', () => {
+      if (!lastSvg) return;
+      const blob = new Blob([lastSvg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'connected-block-text.svg';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
 
-// Auto-regenerate
-let rt;
-function sched() { clearTimeout(rt); rt = setTimeout(generate, 300); }
-['inputText', 'blockW', 'blockH', 'fontFamily'].forEach(id => document.getElementById(id).addEventListener('input', sched));
-['uppercase', 'scoreLines'].forEach(id => document.getElementById(id).addEventListener('change', sched));
-['fillColor', 'scoreColor'].forEach(id => document.getElementById(id).addEventListener('input', sched));
+    els.copySvg.addEventListener('click', async () => {
+      if (!lastSvg) return;
+      await navigator.clipboard.writeText(lastSvg);
+      els.status.innerHTML = '<span class="ok">SVG copied to clipboard.</span>';
+    });
 
-setTimeout(generate, 400);
-</script>
+    buildSvg();
+  </script>
 </body>
 </html>
