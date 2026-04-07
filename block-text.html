@@ -131,7 +131,6 @@ LOVE</textarea>
     <div class="group-title">Options</div>
     <div class="toggle-row"><label>Uppercase</label><label class="toggle"><input type="checkbox" id="uppercase" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
     <div class="toggle-row"><label>Score lines (letter outlines)</label><label class="toggle"><input type="checkbox" id="scoreLines" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label>Show cut outline</label><label class="toggle"><input type="checkbox" id="cutOutline" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
   </div>
 
   <!-- Colors -->
@@ -139,7 +138,6 @@ LOVE</textarea>
     <div class="group-title">Colors</div>
     <div class="row-3">
       <div style="display:flex;align-items:center;gap:4px"><input type="color" id="fillColor" value="#000000"><label>Fill</label></div>
-      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="cutColor" value="#FF0000"><label>Cut</label></div>
       <div style="display:flex;align-items:center;gap:4px"><input type="color" id="scoreColor" value="#0000FF"><label>Score</label></div>
     </div>
   </div>
@@ -299,10 +297,9 @@ async function render() {
 
   const { lines, W, H, pad, innerW, innerH, font } = layout;
   const fillColor = document.getElementById('fillColor').value;
-  const cutColor = document.getElementById('cutColor').value;
+
   const scoreColor = document.getElementById('scoreColor').value;
   const showScore = document.getElementById('scoreLines').checked;
-  const showCut = document.getElementById('cutOutline').checked;
 
   setStatus('Rendering...');
   await frame();
@@ -375,11 +372,6 @@ async function render() {
   svg.push(`  <!-- FILL: welded text block -->`)
   svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
 
-  // Cut layer
-  if (showCut) {
-    svg.push(`  <!-- CUT: outer outline (red = laser cut) -->`);
-    svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="${cutColor}" stroke-width="0.3"/>`);
-  }
 
   // Score layer
   if (showScore) {
@@ -477,9 +469,9 @@ function scheduleRegen() { clearTimeout(regenTimer); regenTimer = setTimeout(ren
 
 ['inputText', 'blockW', 'blockH', 'padding', 'fontFamily', 'letterSpace']
   .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
-['uppercase', 'scoreLines', 'cutOutline']
+['uppercase', 'scoreLines']
   .forEach(id => document.getElementById(id).addEventListener('change', scheduleRegen));
-['fillColor', 'cutColor', 'scoreColor']
+['fillColor', 'scoreColor']
   .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
 
 // ═══════════════════════════════════════════════
