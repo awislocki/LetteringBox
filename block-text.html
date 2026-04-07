@@ -254,7 +254,7 @@ async function generateWelded(){
     // Stretch text to fill BOTH width and height of the line slot.
     // stretchX fills the width. stretchY fills the line height.
     // This guarantees zero gaps — text fills every pixel of its slot.
-    const stretchY=ln.lineH/ln.fs; // scale font to fill line height exactly
+    const stretchY=ln.lineH/ln.fs*1.15; // scale font to fill line height exactly
     const fs=ln.fs*scale;
     // Baseline: font ascent is ~80% of font size. After vertical stretch,
     // position so top of stretched text aligns with top of line slot.
@@ -312,7 +312,7 @@ async function generateWelded(){
   // Score lines: character outlines + vertical lines between letters + horizontal lines between rows
   if(showScore){
     for(const ln of lines){
-      const stretchY=ln.lineH/ln.fs;
+      const stretchY=ln.lineH/ln.fs*1.15;
       const baseline=ln.y+ln.fs*0.8*stretchY;
 
       // Character outlines — stretched both horizontally and vertically to match the welded render
