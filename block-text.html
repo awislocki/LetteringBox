@@ -251,30 +251,33 @@ async function generateWelded(){
   ctx.fillStyle='#000';
 
   for(const ln of lines){
+    // Stretch text to fill BOTH width and height of the line slot.
+    // stretchX fills the width. stretchY fills the line height.
+    // This guarantees zero gaps — text fills every pixel of its slot.
+    const stretchY=ln.lineH/ln.fs; // scale font to fill line height exactly
     const fs=ln.fs*scale;
-    const baseline=(ln.y+ln.lineH*0.5+ln.fs*0.35)*scale; // baseline at 82% of line slot
+    // Baseline: font ascent is ~80% of font size. After vertical stretch,
+    // position so top of stretched text aligns with top of line slot.
+    const baseline=(ln.y+ln.fs*0.8*stretchY)*scale;
 
-    // Method: render each character individually, stretched to fill width.
-    // Use ctx.save/restore with horizontal scale to stretch each char.
-    let cx=ln.chars[0].x*scale;
-    for(const c of ln.chars){
-      if(c.ch===' '){cx+=c.w*scale;continue}
-      ctx.save();
-      ctx.translate(c.x*scale, baseline);
-      ctx.scale(ln.stretchX, 1); // stretch horizontally to fill line
-      ctx.font=`900 ${fs}px ${font}`;
-      ctx.fillText(c.ch, 0, 0);
-      ctx.restore();
-      cx+=c.w*scale;
-    }
-
-    // Also render the whole line as one piece (catches kerning/ligatures the char-by-char misses)
+    // Render whole line stretched to fill width AND height
     ctx.save();
     ctx.translate(pad*scale, baseline);
-    ctx.scale(ln.stretchX, 1);
+    ctx.scale(ln.stretchX, stretchY); // stretch both axes
     ctx.font=`900 ${fs}px ${font}`;
     ctx.fillText(ln.text, 0, 0);
     ctx.restore();
+
+    // Also render each character individually (fills any kerning gaps)
+    for(const c of ln.chars){
+      if(c.ch===' ')continue;
+      ctx.save();
+      ctx.translate(c.x*scale, baseline);
+      ctx.scale(ln.stretchX, stretchY);
+      ctx.font=`900 ${fs}px ${font}`;
+      ctx.fillText(c.ch, 0, 0);
+      ctx.restore();
+    }
   }
 
   // Trace
@@ -309,12 +312,13 @@ async function generateWelded(){
   // Score lines: character outlines + vertical lines between letters + horizontal lines between rows
   if(showScore){
     for(const ln of lines){
-      const baseline=ln.y+ln.lineH*0.5+ln.fs*0.35;
+      const stretchY=ln.lineH/ln.fs;
+      const baseline=ln.y+ln.fs*0.8*stretchY;
 
-      // Character outlines
+      // Character outlines — stretched both horizontally and vertically to match the welded render
       for(const c of ln.chars){
         if(c.ch===' ')continue;
-        parts.push(`<text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.25" transform="translate(${c.x.toFixed(1)},${baseline.toFixed(1)}) scale(${ln.stretchX.toFixed(4)},1) translate(${(-c.x).toFixed(1)},${(-baseline).toFixed(1)})">${esc(c.ch)}</text>`);
+        parts.push(`<text x="0" y="0" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.25" transform="translate(${c.x.toFixed(1)},${baseline.toFixed(1)}) scale(${ln.stretchX.toFixed(4)},${stretchY.toFixed(4)})">${esc(c.ch)}</text>`);
       }
 
       // Vertical score lines between characters (at each boundary where letters meet)
