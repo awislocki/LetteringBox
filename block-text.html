@@ -5,74 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Connected Block Text Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Oswald:wght@700&family=Passion+One:wght@900&family=Russo+One&family=Staatliches&family=Teko:wght@700&family=Allerta+Stencil&family=Saira+Stencil+One&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --bg: #111118; --panel: #1a1a26; --border: #2a2a3a;
-  --accent: #2a9d8f; --warn: #e76f51; --text: #e8e8ee; --dim: #777;
-}
-body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
-.layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
-
-/* ── Sidebar ── */
-.sidebar { background: var(--panel); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-.sidebar::-webkit-scrollbar { width: 4px; } .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-h1 { font-size: 1.05rem; color: var(--accent); letter-spacing: -0.02em; }
-.subtitle { font-size: .68rem; color: var(--dim); margin-top: -8px; }
-.nav { display: flex; gap: 6px; }
-.nav a { font-size: .66rem; color: var(--accent); text-decoration: none; padding: 3px 8px; border: 1px solid var(--border); border-radius: 3px; }
-.nav a:hover { border-color: var(--accent); } .nav a.active { background: rgba(42,157,143,.15); border-color: var(--accent); }
-.group { display: flex; flex-direction: column; gap: 4px; }
-.group-title { font-size: .6rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--dim); }
-label { font-size: .72rem; color: var(--dim); }
-textarea { width: 100%; min-height: 100px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: 'Courier New', monospace; font-size: .8rem; line-height: 1.35; resize: vertical; }
-textarea:focus, select:focus, input:focus { outline: none; border-color: var(--accent); }
-select, input[type="number"] { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: .74rem; }
-input[type="range"] { width: 100%; accent-color: var(--accent); }
-input[type="color"] { width: 28px; height: 22px; border: 1px solid var(--border); border-radius: 3px; padding: 0; cursor: pointer; }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-.slider-row { display: flex; align-items: center; gap: 6px; }
-.slider-row input[type="range"] { flex: 1; }
-.slider-val { font-size: .66rem; color: var(--accent); min-width: 36px; text-align: right; }
-.btn { width: 100%; padding: 8px; border: none; border-radius: 4px; font-size: .78rem; font-weight: 600; cursor: pointer; transition: background .12s; }
-.btn-primary { background: var(--accent); color: #fff; } .btn-primary:hover { background: #238b80; }
-.btn-export { background: #1a3a5c; color: #8ab4f8; margin-top: 2px; } .btn-export:hover { background: #1e4470; }
-.toggle-row { display: flex; align-items: center; justify-content: space-between; }
-.toggle { position: relative; width: 28px; height: 15px; cursor: pointer; flex-shrink: 0; }
-.toggle input { display: none; }
-.toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 8px; transition: background .2s; }
-.toggle input:checked + .toggle-track { background: var(--accent); }
-.toggle-thumb { position: absolute; top: 1px; left: 1px; width: 13px; height: 13px; background: #fff; border-radius: 50%; transition: transform .2s; }
-.toggle input:checked ~ .toggle-thumb { transform: translateX(13px); }
-.status { font-size: .66rem; color: var(--dim); min-height: 1em; }
-.warn { color: var(--warn); font-weight: 600; }
-.note { font-size: .58rem; color: var(--dim); line-height: 1.25; padding: 6px; background: rgba(42,157,143,.05); border: 1px solid rgba(42,157,143,.12); border-radius: 4px; }
-
-/* ── Preview ── */
-.preview { display: flex; align-items: center; justify-content: center; background: #0a0a10; position: relative; overflow: auto; padding: 20px; }
-.preview-card { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
-.preview-controls { position: absolute; bottom: 10px; display: flex; gap: 4px; }
-.preview-controls button { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 3px 10px; font-size: .64rem; cursor: pointer; }
-.preview-controls button:hover { border-color: var(--accent); }
+:root { --bg:#111118; --panel:#1a1a26; --border:#2a2a3a; --accent:#2a9d8f; --warn:#e76f51; --text:#e8e8ee; --dim:#777; }
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
+.layout { display:grid; grid-template-columns:320px 1fr; height:100vh; }
+.sidebar { background:var(--panel); border-right:1px solid var(--border); padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+.sidebar::-webkit-scrollbar{width:4px} .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+h1 { font-size:1.05rem; color:var(--accent); }
+.subtitle { font-size:.66rem; color:var(--dim); margin-top:-6px; }
+.nav { display:flex; gap:6px; }
+.nav a { font-size:.66rem; color:var(--accent); text-decoration:none; padding:3px 8px; border:1px solid var(--border); border-radius:3px; }
+.nav a:hover{border-color:var(--accent)} .nav a.active{background:rgba(42,157,143,.15);border-color:var(--accent)}
+.group { display:flex; flex-direction:column; gap:3px; }
+.group-title { font-size:.6rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--dim); }
+label { font-size:.72rem; color:var(--dim); }
+textarea { width:100%; min-height:90px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:7px; font-family:'Courier New',monospace; font-size:.78rem; line-height:1.3; resize:vertical; }
+textarea:focus,select:focus,input:focus{outline:none;border-color:var(--accent)}
+select,input[type="number"]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.74rem}
+input[type="range"]{width:100%;accent-color:var(--accent)}
+input[type="color"]{width:28px;height:22px;border:1px solid var(--border);border-radius:3px;padding:0;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.slider-row{display:flex;align-items:center;gap:6px}
+.slider-row input[type="range"]{flex:1}
+.slider-val{font-size:.66rem;color:var(--accent);min-width:36px;text-align:right}
+.btn{width:100%;padding:8px;border:none;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff} .btn-primary:hover{background:#238b80}
+.btn-export{background:#1a3a5c;color:#8ab4f8;margin-top:2px} .btn-export:hover{background:#1e4470}
+.toggle-row{display:flex;align-items:center;justify-content:space-between}
+.toggle{position:relative;width:28px;height:15px;cursor:pointer;flex-shrink:0}
+.toggle input{display:none}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:8px;transition:background .2s}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle-thumb{position:absolute;top:1px;left:1px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle input:checked~.toggle-thumb{transform:translateX(13px)}
+.status{font-size:.66rem;color:var(--dim);min-height:1em}
+.warn{color:var(--warn);font-weight:600}
+.note{font-size:.58rem;color:var(--dim);line-height:1.25;padding:6px;background:rgba(42,157,143,.05);border:1px solid rgba(42,157,143,.12);border-radius:4px}
+.preview{display:flex;align-items:center;justify-content:center;background:#0a0a10;position:relative;overflow:auto;padding:20px}
+.preview-card{background:#fff;border-radius:6px;padding:8px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.preview-controls{position:absolute;bottom:10px;display:flex;gap:4px}
+.preview-controls button{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:.64rem;cursor:pointer}
+.preview-controls button:hover{border-color:var(--accent)}
 </style>
 </head>
 <body>
 <div class="layout">
-
-<!-- ════════════ SIDEBAR ════════════ -->
 <div class="sidebar">
-  <div>
-    <h1>Connected Block Text</h1>
-    <p class="subtitle">Every letter joined. Every line welded. One cuttable piece.</p>
-  </div>
-  <div class="nav">
-    <a href="index.html">Shape Cutter</a>
-    <a href="block-text.html" class="active">Block Text</a>
-  </div>
+  <div><h1>Connected Block Text</h1><p class="subtitle">Every letter joined. One cuttable piece.</p></div>
+  <div class="nav"><a href="index.html">Shape Cutter</a><a href="block-text.html" class="active">Block Text</a></div>
 
-  <!-- Text -->
   <div class="group">
     <div class="group-title">Text</div>
     <textarea id="inputText">EVERY DAY
@@ -81,20 +63,17 @@ DARK NIGHT
 THE DREAD
 OF ETERNAL
 LOVE</textarea>
-    <p style="font-size:.6rem;color:var(--dim)">One line per row. Add <b>+</b> or <b>-</b> at end to adjust that line's size (e.g. <code>LOVE+++</code>).</p>
+    <p style="font-size:.58rem;color:var(--dim)">One line per row. Add <b>+++</b> or <b>---</b> at end to adjust that line's height.</p>
   </div>
 
-  <!-- Dimensions -->
   <div class="group">
-    <div class="group-title">Dimensions</div>
+    <div class="group-title">Block Size</div>
     <div class="row">
       <div><label>Width</label><input type="number" id="blockW" value="400" min="50" max="2000" step="10"></div>
       <div><label>Height</label><input type="number" id="blockH" value="400" min="50" max="2000" step="10"></div>
     </div>
-    <div><label>Padding</label><input type="number" id="padding" value="0" min="0" max="60"></div>
   </div>
 
-  <!-- Font -->
   <div class="group">
     <div class="group-title">Font</div>
     <select id="fontFamily">
@@ -111,385 +90,177 @@ LOVE</textarea>
       <option value="'Saira Stencil One'">Saira Stencil One</option>
       <option value="'Arial Black'">Arial Black</option>
       <option value="Arial">Arial</option>
-      <option value="Georgia">Georgia</option>
     </select>
   </div>
 
-  <!-- Spacing -->
-  <div class="group">
-    <div class="group-title">Spacing</div>
-    <label>Letter spacing</label>
-    <div class="slider-row">
-      <input type="range" id="letterSpace" min="-10" max="5" value="-2">
-      <span class="slider-val" id="letterSpaceVal">-2%</span>
-    </div>
-    <p style="font-size:.6rem;color:var(--dim)">Lines meet exactly at the boundary — no gap, no excess.</p>
-  </div>
-
-  <!-- Options -->
   <div class="group">
     <div class="group-title">Options</div>
     <div class="toggle-row"><label>Uppercase</label><label class="toggle"><input type="checkbox" id="uppercase" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label>Score lines (letter outlines)</label><label class="toggle"><input type="checkbox" id="scoreLines" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label>Outline view (see cut lines)</label><label class="toggle"><input type="checkbox" id="outlineView"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div class="toggle-row"><label>Score lines between letters</label><label class="toggle"><input type="checkbox" id="scoreLines" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
   </div>
 
-  <!-- Colors -->
   <div class="group">
     <div class="group-title">Colors</div>
-    <div class="row-3">
+    <div class="row">
       <div style="display:flex;align-items:center;gap:4px"><input type="color" id="fillColor" value="#000000"><label>Fill</label></div>
       <div style="display:flex;align-items:center;gap:4px"><input type="color" id="scoreColor" value="#0000FF"><label>Score</label></div>
     </div>
   </div>
 
-  <!-- Actions -->
   <div class="group">
-    <button class="btn btn-primary" onclick="render()">Generate</button>
+    <button class="btn btn-primary" onclick="generate()">Generate</button>
     <button class="btn btn-export" onclick="download()">Download SVG</button>
     <div class="status" id="status"></div>
   </div>
 
   <div class="note">
-    <b>How it works:</b> Each line is measured and scaled to fill the block width.
-    Letters are spaced tightly (negative spacing) so they physically overlap.
-    Lines are vertically overlapped so rows connect. The canvas bitmap is traced
-    into a single welded vector path. Score lines (blue) mark letter boundaries
-    for engraving. Cut outline (red) marks the outer edge for cutting.
+    <b>How it works:</b> Each line is stretched to fill the block width using SVG <code>textLength</code>.
+    Lines are sized to fill the block height. The SVG text elements ARE the cut paths —
+    import into laser software, select all, convert text to path (Path → Object to Path in Inkscape),
+    then union (Path → Union). Result: one connected cuttable piece.
+    Score lines mark letter boundaries for optional engraving.
   </div>
 </div>
 
-<!-- ════════════ PREVIEW ════════════ -->
 <div class="preview">
   <div class="preview-card" id="previewCard"></div>
   <div class="preview-controls">
-    <button onclick="setZoom(zoom*1.25)">+</button>
-    <button onclick="setZoom(zoom/1.25)">&minus;</button>
-    <button onclick="setZoom(1)">1:1</button>
+    <button onclick="zm=Math.min(zm*1.25,5);apZ()">+</button>
+    <button onclick="zm=Math.max(zm/1.25,.2);apZ()">&minus;</button>
+    <button onclick="zm=1;apZ()">1:1</button>
   </div>
 </div>
-
 </div>
 
-<canvas id="measureCanvas" style="display:none"></canvas>
-<canvas id="renderCanvas" style="display:none"></canvas>
+<canvas id="mc" style="display:none"></canvas>
 
 <script>
-// ═══════════════════════════════════════════════
-//  State
-// ═══════════════════════════════════════════════
-let zoom = 1;
-let svgOutput = '';
+let zm = 1, svgOut = '';
+const mctx = (() => { const c = document.getElementById('mc'); c.width = 4000; c.height = 400; return c.getContext('2d'); })();
+function apZ() { const s = document.querySelector('#previewCard svg'); if (s) { s.style.transform = `scale(${zm})`; s.style.transformOrigin = 'top left'; } }
 
-// ═══════════════════════════════════════════════
-//  Measurement
-// ═══════════════════════════════════════════════
-const measureCtx = (() => {
-  const c = document.getElementById('measureCanvas');
-  c.width = 4000; c.height = 400;
-  return c.getContext('2d');
-})();
-
-function measureText(text, fontSize, font) {
-  measureCtx.font = `900 ${fontSize}px ${font}`;
-  const m = measureCtx.measureText(text);
-  return {
-    width: m.width,
-    ascent: m.actualBoundingBoxAscent || fontSize * 0.8,
-    descent: m.actualBoundingBoxDescent || fontSize * 0.2,
-  };
+function meas(text, fs, font) {
+  mctx.font = `900 ${fs}px ${font}`;
+  return mctx.measureText(text).width;
 }
 
-// ═══════════════════════════════════════════════
-//  Layout: parse text, compute per-line sizing
-// ═══════════════════════════════════════════════
-function computeLayout() {
+function generate() {
   const raw = document.getElementById('inputText').value;
   const W = +document.getElementById('blockW').value;
   const H = +document.getElementById('blockH').value;
-  const pad = +document.getElementById('padding').value;
   const font = document.getElementById('fontFamily').value;
   const caps = document.getElementById('uppercase').checked;
-  const letterSpacePct = +document.getElementById('letterSpace').value;
+  const showScore = document.getElementById('scoreLines').checked;
+  const fillColor = document.getElementById('fillColor').value;
+  const scoreColor = document.getElementById('scoreColor').value;
 
-  // Parse lines, strip +/- modifiers
+  // Parse lines + boost modifiers
   const parsed = raw.split('\n').map(l => l.trim()).filter(l => l).map(l => {
     let text = caps ? l.toUpperCase() : l;
     let boost = 0;
-    const pm = text.match(/(\++|-+)$/);
-    if (pm) {
-      boost = pm[1][0] === '+' ? pm[1].length : -pm[1].length;
-      text = text.slice(0, pm.index).trim();
-    }
+    const m = text.match(/(\++|-+)$/);
+    if (m) { boost = m[1][0] === '+' ? m[1].length : -m[1].length; text = text.slice(0, m.index).trim(); }
     return { text, boost };
   }).filter(p => p.text);
 
-  if (!parsed.length) return null;
-
+  if (!parsed.length) return;
   const n = parsed.length;
-  const innerW = W - pad * 2;
-  const innerH = H - pad * 2;
 
-  // Distribute vertical space proportionally based on boost.
-  // Each + adds 15% weight, each - removes 15%. Weighted so total fills innerH.
+  // Weighted line heights based on boost
   const weights = parsed.map(p => Math.max(0.2, 1 + p.boost * 0.15));
-  const totalWeight = weights.reduce((s, w) => s + w, 0);
-  const lineHeights = weights.map(w => innerH * w / totalWeight);
+  const totalW = weights.reduce((s, w) => s + w, 0);
+  const lineHs = weights.map(w => H * w / totalW);
 
   // Cumulative Y positions
-  const lineYs = [];
-  let cumY = pad;
-  for (let i = 0; i < n; i++) { lineYs.push(cumY); cumY += lineHeights[i]; }
+  let cy = 0;
+  const lineYs = lineHs.map(h => { const y = cy; cy += h; return y; });
 
-  // Per-line layout
+  // For each line: the text fills the full width via textLength,
+  // and the font size is set so the text fills the line height.
+  // We use a reference font size and let textLength handle the width.
   const lines = parsed.map((p, i) => {
-    const lineH = lineHeights[i];
-
-    // Binary search for font size that makes text width = innerW
-    let lo = 1, hi = 500, fs = 1;
-    for (let iter = 0; iter < 50; iter++) {
-      const mid = (lo + hi) / 2;
-      const w = measureText(p.text, mid, font).width;
-      const ew = w + (p.text.length - 1) * mid * letterSpacePct / 100;
-      if (ew <= innerW) { fs = mid; lo = mid + 0.01; } else { hi = mid - 0.01; }
-    }
-
-    // Horizontal stretch to fill width exactly
-    const natW = measureText(p.text, fs, font).width +
-                 (p.text.length - 1) * fs * letterSpacePct / 100;
-    const scaleX = innerW / natW;
-
-    // Measure the actual ink height of this text
-    const metrics = measureText(p.text, fs, font);
-    const inkH = metrics.ascent + metrics.descent; // actual pixels of ink top-to-bottom
-
-    // scaleY: stretch so the actual ink fills exactly the line slot height.
-    // This means the bottom of this line's ink meets the top of the next line's ink
-    // at the seam — touching, welded, no gap, no excess overflow.
-    const scaleY = lineH / inkH;
-
-    // Position: place baseline so ink top aligns with slot top
+    const lineH = lineHs[i];
     const y = lineYs[i];
-    const baseline = y + metrics.ascent * scaleY;
 
-    // Per-character x positions (for score lines)
+    // Font size = line height. The text will be as tall as the line slot.
+    // textLength stretches it to fill the width.
+    const fs = lineH;
+
+    // Measure natural width at this font size (for score line char positions)
+    const natW = meas(p.text, fs, font);
     const chars = [];
-    let cx = pad;
-    for (let ci = 0; ci < p.text.length; ci++) {
-      const cw = measureText(p.text[ci], fs, font).width * scaleX;
-      const sp = ci > 0 ? fs * scaleX * letterSpacePct / 100 : 0;
-      cx += sp;
-      chars.push({ ch: p.text[ci], x: cx, w: cw });
-      cx += cw;
+    let cx = 0;
+    for (const ch of p.text) {
+      const cw = meas(ch, fs, font);
+      const ratio = cw / natW; // this char's share of total width
+      chars.push({ ch, x: cx, w: W * ratio });
+      cx += W * ratio;
     }
 
-    return { text: p.text, y, fs, lineH, scaleX, scaleY, baseline, chars };
+    return { text: p.text, y, fs, lineH, chars };
   });
 
-  return { lines, W, H, pad, innerW, innerH, font };
-}
-
-// ═══════════════════════════════════════════════
-//  Render: canvas → trace → SVG
-// ═══════════════════════════════════════════════
-async function render() {
-  const layout = computeLayout();
-  if (!layout) return;
-
-  const { lines, W, H, pad, innerW, innerH, font } = layout;
-  const fillColor = document.getElementById('fillColor').value;
-
-  const scoreColor = document.getElementById('scoreColor').value;
-  const showScore = document.getElementById('scoreLines').checked;
-
-  setStatus('Rendering...');
-  await frame();
-
-  // ── 1. Render to high-res canvas ──
-  const S = 3; // supersampling scale
-  const cw = W * S, ch = H * S;
-  const canvas = document.getElementById('renderCanvas');
-  canvas.width = cw; canvas.height = ch;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, cw, ch);
-  ctx.fillStyle = '#000';
-
-  for (const ln of lines) {
-    ctx.save();
-    ctx.translate(pad * S, ln.baseline * S);
-    ctx.scale(ln.scaleX, ln.scaleY);
-    ctx.font = `900 ${ln.fs * S}px ${font}`;
-    // Render full line (natural kerning)
-    ctx.fillText(ln.text, 0, 0);
-    ctx.restore();
-
-    // Also render each char individually to fill kerning gaps
-    for (const c of ln.chars) {
-      if (c.ch === ' ') continue;
-      ctx.save();
-      ctx.translate(c.x * S, ln.baseline * S);
-      ctx.scale(ln.scaleX, ln.scaleY);
-      ctx.font = `900 ${ln.fs * S}px ${font}`;
-      ctx.fillText(c.ch, 0, 0);
-      ctx.restore();
-    }
-  }
-
-  // ── 2. Trace bitmap → vector paths ──
-  setStatus('Tracing vectors...');
-  await frame();
-
-  if (typeof ImageTracer === 'undefined') {
-    setStatus('ImageTracer library not loaded. Check internet connection.', true);
-    return;
-  }
-
-  const imgData = ctx.getImageData(0, 0, cw, ch);
-  let traced;
-  try {
-    traced = ImageTracer.imagedataToSVG(imgData, {
-      ltres: 1, qtres: 1, pathomit: 4,
-      colorsampling: 0, numberofcolors: 2,
-      rightangleenhance: true,
-      scale: 1 / S,
-    });
-  } catch (e) {
-    setStatus('Trace failed: ' + e.message, true);
-    return;
-  }
-
-  // ── 3. Extract welded paths ──
-  const darkPaths = extractDarkPaths(traced);
-  if (!darkPaths.length) { setStatus('No paths generated.', true); return; }
-
-  const pathCount = darkPaths.length;
-  const combinedD = darkPaths.join(' ');
-
-  // ── 4. Build output SVG ──
+  // Build SVG — the text elements ARE the cut geometry
   const svg = [];
   svg.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
 
-  // Fill layer
-  // The welded path IS the cut — laser follows this outline to cut the letters out.
-  // Always include both: filled preview + red hairline cut stroke.
-  // Laser software reads the red stroke as the cut line.
-  const outlineView = document.getElementById('outlineView').checked;
-  if (outlineView) {
-    svg.push(`  <!-- CUT: laser cuts along this red outline -->`);
-    svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.5"/>`);
-  } else {
-    svg.push(`  <!-- PREVIEW FILL -->`);
-    svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
-    svg.push(`  <!-- CUT: laser cuts along this red outline -->`);
-    svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.01"/>`);
+  // Each line is a <text> element stretched to fill the full width.
+  // Font size = line height so text fills vertically.
+  // textLength = block width so text fills horizontally.
+  // These are the actual shapes the laser cuts.
+  for (const ln of lines) {
+    const baseline = ln.y + ln.fs * 0.82;
+    svg.push(`  <text x="0" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="${fillColor}" textLength="${W}" lengthAdjust="spacingAndGlyphs">${esc(ln.text)}</text>`);
   }
 
-
-  // Score layer
+  // Score lines: thin strokes between characters and between rows
   if (showScore) {
-    svg.push(`  <!-- SCORE: letter outlines (blue = laser engrave) -->`);
+    svg.push(`  <!-- SCORE: letter boundaries for engraving -->`);
     for (const ln of lines) {
+      const baseline = ln.y + ln.fs * 0.82;
+      // Individual character outlines
       for (const c of ln.chars) {
         if (c.ch === ' ') continue;
-        // Score each character with matching transforms
-        svg.push(`  <text x="0" y="0" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.2" transform="translate(${c.x.toFixed(1)},${ln.baseline.toFixed(1)}) scale(${ln.scaleX.toFixed(4)},${ln.scaleY.toFixed(4)})">${esc(c.ch)}</text>`);
+        svg.push(`  <text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.3" textLength="${c.w.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(c.ch)}</text>`);
       }
-      // Horizontal score between this line and next
-      const lineBottom = ln.y + ln.lineH;
-      if (ln !== lines[lines.length - 1]) {
-        svg.push(`  <line x1="${pad}" y1="${lineBottom.toFixed(1)}" x2="${(pad + innerW).toFixed(0)}" y2="${lineBottom.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.15"/>`);
-      }
-      // Vertical scores between characters
+      // Vertical lines between characters
       for (let ci = 1; ci < ln.chars.length; ci++) {
         const x = ln.chars[ci].x;
-        svg.push(`  <line x1="${x.toFixed(1)}" y1="${ln.y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(ln.y + ln.lineH).toFixed(1)}" stroke="${scoreColor}" stroke-width="0.15"/>`);
+        svg.push(`  <line x1="${x.toFixed(1)}" y1="${ln.y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(ln.y + ln.lineH).toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
       }
+    }
+    // Horizontal lines between rows
+    for (let i = 1; i < lines.length; i++) {
+      svg.push(`  <line x1="0" y1="${lines[i].y.toFixed(1)}" x2="${W}" y2="${lines[i].y.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
     }
   }
 
   svg.push('</svg>');
-  svgOutput = svg.join('\n');
+  svgOut = svg.join('\n');
 
-  // ── 5. Display ──
-  document.getElementById('previewCard').innerHTML = svgOutput;
-  applyZoom();
-
-  // ── 6. Island detection ──
-  const islandWarning = pathCount > 1
-    ? `<span class="warn">Warning: ${pathCount} disconnected pieces detected. Increase line overlap or letter spacing.</span>`
-    : 'Single connected piece ✓';
-
-  setStatus(`${lines.length} lines · ${pathCount} path(s) · ${(combinedD.length / 1024).toFixed(0)}KB — ${islandWarning}`);
-}
-
-// ═══════════════════════════════════════════════
-//  Helpers
-// ═══════════════════════════════════════════════
-function extractDarkPaths(svgStr) {
-  const doc = new DOMParser().parseFromString(svgStr, 'image/svg+xml');
-  const out = [];
-  for (const p of doc.querySelectorAll('path')) {
-    const fill = p.getAttribute('fill') || '';
-    let dark = false;
-    if (fill.startsWith('rgb')) { const m = fill.match(/\d+/g); if (m && +m[0] < 128) dark = true; }
-    else if (['#000000', '#000', 'black'].includes(fill)) dark = true;
-    else if (fill.startsWith('#') && fill.length >= 7 && parseInt(fill.substr(1, 2), 16) < 128) dark = true;
-    if (dark) { const d = p.getAttribute('d'); if (d) out.push(d); }
-  }
-  // Fallback: take all paths if no dark ones found
-  if (!out.length) { for (const p of doc.querySelectorAll('path')) { const d = p.getAttribute('d'); if (d) out.push(d); } }
-  return out;
+  document.getElementById('previewCard').innerHTML = svgOut;
+  apZ();
+  document.getElementById('status').textContent = `${n} lines — Import into Inkscape → Select All → Path → Object to Path → Path → Union`;
 }
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-function frame() { return new Promise(r => setTimeout(r, 16)); }
-function setStatus(msg, isWarn) {
-  const el = document.getElementById('status');
-  el.innerHTML = msg;
-}
 
-// Zoom
-function setZoom(z) { zoom = Math.max(0.1, Math.min(5, z)); applyZoom(); }
-function applyZoom() {
-  const svg = document.querySelector('#previewCard svg');
-  if (svg) { svg.style.transform = `scale(${zoom})`; svg.style.transformOrigin = 'top left'; }
-}
-
-// Download
 function download() {
-  if (!svgOutput) return;
-  const blob = new Blob([svgOutput], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `block-text-${Date.now()}.svg`;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
+  if (!svgOut) return;
+  const b = new Blob([svgOut], { type: 'image/svg+xml' });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a'); a.href = u; a.download = `block-text-${Date.now()}.svg`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u);
 }
 
-// ═══════════════════════════════════════════════
-//  Slider labels
-// ═══════════════════════════════════════════════
-document.getElementById('letterSpace').oninput = function () {
-  document.getElementById('letterSpaceVal').textContent = this.value + '%';
-};
+// Auto-regenerate
+let rt;
+function sched() { clearTimeout(rt); rt = setTimeout(generate, 300); }
+['inputText', 'blockW', 'blockH', 'fontFamily'].forEach(id => document.getElementById(id).addEventListener('input', sched));
+['uppercase', 'scoreLines'].forEach(id => document.getElementById(id).addEventListener('change', sched));
+['fillColor', 'scoreColor'].forEach(id => document.getElementById(id).addEventListener('input', sched));
 
-// ═══════════════════════════════════════════════
-//  Auto-regenerate on any change
-// ═══════════════════════════════════════════════
-let regenTimer;
-function scheduleRegen() { clearTimeout(regenTimer); regenTimer = setTimeout(render, 400); }
-
-['inputText', 'blockW', 'blockH', 'padding', 'fontFamily', 'letterSpace']
-  .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
-['uppercase', 'scoreLines', 'outlineView']
-  .forEach(id => document.getElementById(id).addEventListener('change', scheduleRegen));
-['fillColor', 'scoreColor']
-  .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
-
-// ═══════════════════════════════════════════════
-//  Init
-// ═══════════════════════════════════════════════
-setTimeout(render, 500);
+setTimeout(generate, 400);
 </script>
 </body>
 </html>
