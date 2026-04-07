@@ -557,6 +557,88 @@ LOVE+</textarea>
       }
     }
 
+    // Get shape left/right edges at a given Y. Returns {left, right, width} or null.
+    function shapeRowAt(shape, y, W, H) {
+      const cx = W / 2, cy = H / 2;
+      const r = Math.min(W, H) / 2;
+      switch (shape) {
+        case 'circle': {
+          const d = y - cy;
+          if (Math.abs(d) >= r) return null;
+          const dx = Math.sqrt(r * r - d * d);
+          return { left: cx - dx, right: cx + dx, width: dx * 2 };
+        }
+        case 'diamond': {
+          // Top half: narrows from center, bottom half: widens from center
+          const t = y <= cy ? y / cy : (H - y) / cy;
+          const hw = (W / 2) * Math.max(0, t);
+          return hw > 1 ? { left: cx - hw, right: cx + hw, width: hw * 2 } : null;
+        }
+        case 'heart': {
+          const norm = y / H;
+          let hw;
+          if (norm < 0.35) hw = W * 0.5 * (0.5 + 0.5 * Math.sin(norm / 0.35 * Math.PI));
+          else hw = W * 0.5 * (1 - ((norm - 0.35) / 0.65) ** 1.3);
+          return hw > 2 ? { left: cx - hw, right: cx + hw, width: hw * 2 } : null;
+        }
+        case 'star': {
+          // Approximate star as 5-pointed polygon
+          const or2 = r, ir = r * 0.38;
+          const pts = [];
+          for (let i = 0; i < 5; i++) {
+            const oa = (i * 72 - 90) * Math.PI / 180;
+            const ia = ((i * 72 + 36) - 90) * Math.PI / 180;
+            pts.push([cx + or2 * Math.cos(oa), cy + or2 * Math.sin(oa)]);
+            pts.push([cx + ir * Math.cos(ia), cy + ir * Math.sin(ia)]);
+          }
+          return polyRowAt(y, pts);
+        }
+        case 'cross': {
+          const aw = W * 0.34, ah = H * 0.34;
+          const l = cx - aw / 2, ri = cx + aw / 2;
+          const ht = cy - ah / 2, hb = cy + ah / 2;
+          if (y >= ht && y <= hb) return { left: 0, right: W, width: W };
+          if (y >= 0 && y <= H) return { left: l, right: ri, width: aw };
+          return null;
+        }
+        case 'oval': {
+          const rx = W / 2, ry = H / 2 * 0.7;
+          const d = (y - cy) / ry;
+          if (Math.abs(d) >= 1) return null;
+          const dx = rx * Math.sqrt(1 - d * d);
+          return { left: cx - dx, right: cx + dx, width: dx * 2 };
+        }
+        case 'hexagon': {
+          const pts = [];
+          for (let i = 0; i < 6; i++) {
+            const a = (i * 60 - 90) * Math.PI / 180;
+            pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+          }
+          return polyRowAt(y, pts);
+        }
+        case 'triangle': {
+          if (y < 0 || y > H) return null;
+          const t = y / H;
+          const hw = (W / 2) * t;
+          return hw > 1 ? { left: cx - hw, right: cx + hw, width: hw * 2 } : null;
+        }
+        default: return { left: 0, right: W, width: W };
+      }
+    }
+
+    function polyRowAt(y, pts) {
+      const xs = [];
+      const n = pts.length;
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const yi = pts[i][1], yj = pts[j][1];
+        if ((yi > y) !== (yj > y)) xs.push(pts[i][0] + (y - yi) / (yj - yi) * (pts[j][0] - pts[i][0]));
+      }
+      if (xs.length < 2) return null;
+      xs.sort((a, b) => a - b);
+      return { left: xs[0], right: xs[xs.length - 1], width: xs[xs.length - 1] - xs[0] };
+    }
+
     function lineToSvgPath(font, line, settings, targetWidth) {
       // Font size is driven by width-fitting only — modifier affects HEIGHT via scaleY
       const fontSize = settings.baseFontSize;
@@ -655,74 +737,110 @@ LOVE+</textarea>
         }
         parsedLines = wrapped;
 
-        const built = parsedLines.map(line => lineToSvgPath(font, line, settings, targetWidth));
+        // When shape is enabled, compute total height first for shape row lookups
+        const useShape = document.getElementById('enableShape').checked;
+        const shapeType = document.getElementById('shapeSelect').value;
 
+        // First pass: build all lines at full targetWidth to get heights
+        const prebuilt = parsedLines.map(line => lineToSvgPath(font, line, settings, targetWidth));
+
+        // Calculate total block height
+        let totalBlockH = settings.paddingY;
+        for (let i = 0; i < prebuilt.length; i++) {
+          const sy = prebuilt[i].scaleY || 1;
+          totalBlockH += prebuilt[i].height * sy + (i > 0 ? settings.lineSpacing - settings.verticalOverlap : 0);
+        }
+        totalBlockH += settings.paddingY + settings.verticalOverlap;
+        const blockH = Math.max(100, totalBlockH);
+
+        // Second pass: if shape enabled, rebuild each line at the shape width for its Y position
         const lineBlocks = [];
         let y = settings.paddingY;
         let prevBottom = null;
 
-        for (let i = 0; i < built.length; i++) {
-          const line = built[i];
-          const lineTop = y;
-          // scaleY from +/- modifier: stretches height of this line's text
+        // Pre-compute all line Y positions using prebuilt heights
+        const lineYs = [];
+        let tmpY = settings.paddingY;
+        for (let i = 0; i < prebuilt.length; i++) {
+          lineYs.push(tmpY);
+          const sy = prebuilt[i].scaleY || 1;
+          tmpY += prebuilt[i].height * sy + settings.lineSpacing - settings.verticalOverlap;
+        }
+
+        for (let i = 0; i < parsedLines.length; i++) {
+          const lineTop = lineYs[i] || y;
+          let line;
+          let lineLeftOffset = settings.paddingX;
+
+          if (useShape) {
+            // Get shape width at this line's vertical center
+            const preLine = prebuilt[i];
+            const sy = preLine.scaleY || 1;
+            const lineMidY = lineTop + preLine.height * sy / 2;
+            const row = shapeRowAt(shapeType, lineMidY, settings.outputWidth, blockH);
+            if (row && row.width > 10) {
+              const shapeW = row.width - settings.paddingX * 2;
+              line = lineToSvgPath(font, parsedLines[i], settings, Math.max(20, shapeW));
+              // Center this line within the shape row
+              lineLeftOffset = row.left + (row.width - shapeW) / 2;
+            } else {
+              // Line falls outside shape — use a minimum width
+              line = lineToSvgPath(font, parsedLines[i], settings, 20);
+              lineLeftOffset = settings.outputWidth / 2 - 10;
+            }
+          } else {
+            line = prebuilt[i];
+          }
+
           const sy = line.scaleY || 1;
           const scaledH = line.height * sy;
-          const lineBottom = y + scaledH;
+          const lineBottom = lineTop + scaledH;
           const cutParts = [], scoreParts = [], debugParts = [];
 
-          // Apply scaleY via transform: translate to position, then scale vertically from top edge
-          const tx = `translate(${settings.paddingX}, ${lineTop}) scale(1, ${sy.toFixed(4)})`;
+          const tx = `translate(${lineLeftOffset.toFixed(1)}, ${lineTop.toFixed(1)}) scale(1, ${sy.toFixed(4)})`;
           cutParts.push(`<path d="${line.cutPath}" transform="${tx}" />`);
           if (settings.scoreLines && line.scorePath)
             scoreParts.push(`<path d="${line.scorePath}" transform="${tx}" />`);
           if (settings.showBoxes && line.debugPath)
             debugParts.push(`<path d="${line.debugPath}" transform="${tx}" />`);
 
-          // Thin vertical bridges between lines — spread across the width
+          // Vertical bridges between lines
           if (settings.drawConnectors && prevBottom !== null) {
             const bY = prevBottom - settings.verticalOverlap * 0.5;
             const bH = settings.verticalOverlap + settings.connectorWidth;
             const bW = settings.connectorWidth;
-            const usableW = targetWidth;
-            // Place bridges at regular intervals across the line
+            const usableW = line.width;
             const count = Math.max(3, Math.floor(usableW / 60));
             for (let bi = 0; bi < count; bi++) {
               const frac = (bi + 0.5) / count;
-              const bX = settings.paddingX + usableW * frac - bW / 2;
+              const bX = lineLeftOffset + usableW * frac - bW / 2;
               cutParts.push(`<path d="${rectPath(bX, bY, bW, bH)}" />`);
             }
           }
 
           lineBlocks.push({ cutParts, scoreParts, debugParts });
-          y += scaledH + settings.lineSpacing - settings.verticalOverlap;
+          y = lineTop + scaledH + settings.lineSpacing - settings.verticalOverlap;
           prevBottom = lineBottom;
         }
 
-        const height = Math.max(100, y + settings.paddingY + settings.verticalOverlap);
+        const height = useShape ? blockH : Math.max(100, y + settings.paddingY + settings.verticalOverlap);
         const sw = settings.outputWidth * settings.exportScale;
         const sh = height * settings.exportScale;
 
-        // Shape mask (optional)
-        const useShape = document.getElementById('enableShape').checked;
-        const shapeType = document.getElementById('shapeSelect').value;
+        // Shape outline guide (optional)
         const showShapeOutline = document.getElementById('showShapeOutline').checked;
-        let shapeDefs = '', shapeClipAttr = '', shapeOutlineSvg = '';
-
-        if (useShape) {
+        let shapeOutlineSvg = '';
+        if (useShape && showShapeOutline) {
           const sp = shapePath(shapeType, settings.outputWidth, height);
-          shapeDefs = `  <defs><clipPath id="shapeClip"><path d="${sp}"/></clipPath></defs>\n`;
-          shapeClipAttr = ' clip-path="url(#shapeClip)"';
-          if (showShapeOutline) {
-            shapeOutlineSvg = `  <path d="${sp}" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.4"/>\n`;
-          }
+          shapeOutlineSvg = `  <path d="${sp}" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.4"/>\n`;
         }
 
         const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${sw}" height="${sh}" viewBox="0 0 ${settings.outputWidth} ${height}" fill="none">
-${shapeDefs}${shapeOutlineSvg}  <g id="cut-layer" fill="#000000" stroke="none"${shapeClipAttr}>
+${shapeOutlineSvg}  <g id="cut-layer" fill="#000000" stroke="none">
     ${lineBlocks.flatMap(b => b.cutParts).join('\n    ')}
   </g>
-  <g id="score-layer" fill="none" stroke="#2563eb" stroke-width="0.8" vector-effect="non-scaling-stroke"${shapeClipAttr}>
+  <g id="score-layer" fill="none" stroke="#2563eb" stroke-width="0.8" vector-effect="non-scaling-stroke">
     ${lineBlocks.flatMap(b => b.scoreParts).join('\n    ')}
   </g>
   <g id="debug-layer" fill="none" stroke="#ff00aa" stroke-width="0.5" opacity="0.45">
