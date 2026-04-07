@@ -236,34 +236,41 @@ function computeLayout() {
   const innerW = W - pad * 2;
   const innerH = H - pad * 2;
 
-  // Each line gets equal vertical space
-  const lineH = innerH / n;
+  // Distribute vertical space proportionally based on boost.
+  // Each + adds 15% weight, each - removes 15%. Weighted so total fills innerH.
+  const weights = parsed.map(p => Math.max(0.2, 1 + p.boost * 0.15));
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  const lineHeights = weights.map(w => innerH * w / totalWeight);
 
-  // Per-line: find font size so text fills innerW, then apply boost
+  // Cumulative Y positions
+  const lineYs = [];
+  let cumY = pad;
+  for (let i = 0; i < n; i++) { lineYs.push(cumY); cumY += lineHeights[i]; }
+
+  // Per-line layout
   const lines = parsed.map((p, i) => {
+    const lineH = lineHeights[i];
+
     // Binary search for font size that makes text width = innerW
     let lo = 1, hi = 500, fs = 1;
     for (let iter = 0; iter < 50; iter++) {
       const mid = (lo + hi) / 2;
       const w = measureText(p.text, mid, font).width;
-      // Apply letter spacing: effective width = w + (charCount-1) * mid * spacePct/100
       const ew = w + (p.text.length - 1) * mid * letterSpacePct / 100;
       if (ew <= innerW) { fs = mid; lo = mid + 0.01; } else { hi = mid - 0.01; }
     }
 
-    // Compute horizontal stretch so this line fills innerW exactly
+    // Horizontal stretch to fill width exactly
     const natW = measureText(p.text, fs, font).width +
                  (p.text.length - 1) * fs * letterSpacePct / 100;
     const scaleX = innerW / natW;
 
-    // Vertical stretch: fill lineH, plus overlap into neighbors
-    // +/- boost applies HERE — makes text taller/shorter without changing width
-    const boostFactor = Math.max(0.3, 1 + p.boost * 0.15);
+    // Vertical stretch to fill this line's allocated height + overlap
     const overlapExtra = 1 + lineOverlapPct / 100;
-    const scaleY = (lineH / fs) * overlapExtra * boostFactor;
+    const scaleY = (lineH / fs) * overlapExtra;
 
-    // Baseline position: center vertically in slot
-    const y = pad + i * lineH;
+    // Position
+    const y = lineYs[i];
     const baseline = y + lineH * 0.5 + fs * scaleY * 0.3;
 
     // Per-character x positions (for score lines)
