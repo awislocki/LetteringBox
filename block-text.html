@@ -123,11 +123,7 @@ LOVE</textarea>
       <input type="range" id="letterSpace" min="-10" max="5" value="-2">
       <span class="slider-val" id="letterSpaceVal">-2%</span>
     </div>
-    <label>Line overlap</label>
-    <div class="slider-row">
-      <input type="range" id="lineOverlap" min="0" max="30" value="12">
-      <span class="slider-val" id="lineOverlapVal">12%</span>
-    </div>
+    <p style="font-size:.6rem;color:var(--dim)">Lines meet exactly at the boundary — no gap, no excess.</p>
   </div>
 
   <!-- Options -->
@@ -216,7 +212,6 @@ function computeLayout() {
   const font = document.getElementById('fontFamily').value;
   const caps = document.getElementById('uppercase').checked;
   const letterSpacePct = +document.getElementById('letterSpace').value;
-  const lineOverlapPct = +document.getElementById('lineOverlap').value;
 
   // Parse lines, strip +/- modifiers
   const parsed = raw.split('\n').map(l => l.trim()).filter(l => l).map(l => {
@@ -265,13 +260,18 @@ function computeLayout() {
                  (p.text.length - 1) * fs * letterSpacePct / 100;
     const scaleX = innerW / natW;
 
-    // Vertical stretch to fill this line's allocated height + overlap
-    const overlapExtra = 1 + lineOverlapPct / 100;
-    const scaleY = (lineH / fs) * overlapExtra;
+    // Measure the actual ink height of this text
+    const metrics = measureText(p.text, fs, font);
+    const inkH = metrics.ascent + metrics.descent; // actual pixels of ink top-to-bottom
 
-    // Position
+    // scaleY: stretch so the actual ink fills exactly the line slot height.
+    // This means the bottom of this line's ink meets the top of the next line's ink
+    // at the seam — touching, welded, no gap, no excess overflow.
+    const scaleY = lineH / inkH;
+
+    // Position: place baseline so ink top aligns with slot top
     const y = lineYs[i];
-    const baseline = y + lineH * 0.5 + fs * scaleY * 0.3;
+    const baseline = y + metrics.ascent * scaleY;
 
     // Per-character x positions (for score lines)
     const chars = [];
@@ -468,9 +468,6 @@ function download() {
 document.getElementById('letterSpace').oninput = function () {
   document.getElementById('letterSpaceVal').textContent = this.value + '%';
 };
-document.getElementById('lineOverlap').oninput = function () {
-  document.getElementById('lineOverlapVal').textContent = this.value + '%';
-};
 
 // ═══════════════════════════════════════════════
 //  Auto-regenerate on any change
@@ -478,7 +475,7 @@ document.getElementById('lineOverlap').oninput = function () {
 let regenTimer;
 function scheduleRegen() { clearTimeout(regenTimer); regenTimer = setTimeout(render, 400); }
 
-['inputText', 'blockW', 'blockH', 'padding', 'fontFamily', 'letterSpace', 'lineOverlap']
+['inputText', 'blockW', 'blockH', 'padding', 'fontFamily', 'letterSpace']
   .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
 ['uppercase', 'scoreLines', 'cutOutline']
   .forEach(id => document.getElementById(id).addEventListener('change', scheduleRegen));
