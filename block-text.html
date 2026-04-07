@@ -495,27 +495,17 @@ LOVE+</textarea>
       for (let i = 0; i < measured.glyphs.length; i++) {
         const item = measured.glyphs[i];
         const translated = item.glyph.getPath(item.x + leftOffset, top, scaledFontSize);
-        groupPath += translated.toPathData(3) + ' ';
+        const pathData = translated.toPathData(3);
+        groupPath += pathData + ' ';
 
         const b = translated.getBoundingBox();
         if (settings.showBoxes) debugPath += rectPath(b.x1, b.y1, Math.max(0.1, b.x2 - b.x1), Math.max(0.1, b.y2 - b.y1)) + ' ';
 
-        // Score the overlap zone between adjacent letters.
-        // Only scores where the left letter's ink overlaps the right letter's ink.
-        // The right letter gets visual preference — score marks the left letter's
-        // intrusion into the right letter's space.
-        if (settings.scoreLines && i < measured.glyphs.length - 1) {
-          const next = measured.glyphs[i + 1];
-          const nextTranslated = next.glyph.getPath(next.x + leftOffset, top, scaledFontSize);
-          const nb = nextTranslated.getBoundingBox();
-          // Only score if there IS overlap (left letter's right edge past right letter's left edge)
-          if (Number.isFinite(b.x2) && Number.isFinite(nb.x1) && b.x2 > nb.x1) {
-            // Score line at the right letter's left edge — the overlap boundary
-            const sx = nb.x1;
-            const sTop = Math.min(b.y1, nb.y1);
-            const sBot = Math.max(b.y2, nb.y2);
-            scorePath += `M ${sx.toFixed(3)} ${sTop.toFixed(3)} L ${sx.toFixed(3)} ${sBot.toFixed(3)} `;
-          }
+        // Score: every letter gets its own outline — a border around each character.
+        // When letters overlap, the score shows where each letter's shape is,
+        // making individual letters readable even in a welded block.
+        if (settings.scoreLines && pathData.length > 1) {
+          scorePath += pathData + ' ';
         }
       }
 
