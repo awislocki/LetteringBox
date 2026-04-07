@@ -59,7 +59,7 @@ input[type="color"]{border:1px solid var(--bd);border-radius:3px;padding:1px}
     <textarea id="txtIn">Every day and every dark night
 So hard to speak without lying
 The dread of eternal love</textarea>
-    <p class="hint">Each line fills the block width. All letters and lines welded into one piece.</p>
+    <p class="hint">Each line fills the block width. Add +++ or --- at end of a line to make it bigger or smaller.</p>
   </div>
 
   <div class="s">
@@ -164,36 +164,54 @@ function computeLayout(){
 
   const srcLines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
   if(!srcLines.length)return null;
-  const lines=srcLines.map(l=>caps?l.toUpperCase():l);
+
+  // Parse +/- modifiers at end of each line
+  // "HELLO+++" = font boost of +3 steps, "HELLO--" = shrink by 2 steps
+  const parsed=srcLines.map(l=>{
+    let t=caps?l.toUpperCase():l;
+    let boost=0;
+    // Count trailing + or -
+    const plusMatch=t.match(/(\++)$/);
+    const minusMatch=t.match(/(-+)$/);
+    if(plusMatch){boost=plusMatch[1].length;t=t.slice(0,-boost).trim()}
+    else if(minusMatch){boost=-minusMatch[1].length;t=t.slice(0,minusMatch.index).trim()}
+    return{text:t,boost};
+  }).filter(p=>p.text);
+
+  const n=parsed.length;
+  if(!n)return null;
 
   const availW=W-pad*2;
   const availH=H-pad*2;
-  const n=lines.length;
 
-  // Each line gets exactly availH/n pixels of vertical space. No gaps.
-  const lineH=availH/n;
+  // Base line height = availH/n. Boosts shift height: each + adds 15%, each - removes 15%.
+  // Calculate weighted heights so total = availH
+  const weights=parsed.map(p=>Math.max(0.3, 1+p.boost*0.15));
+  const totalWeight=weights.reduce((s,w)=>s+w,0);
+  const lineHeights=weights.map(w=>availH*w/totalWeight);
 
-  // For each line: find the font size that makes the text exactly availW wide.
-  // The font size also must not exceed lineH (so text fits vertically).
+  // Layout each line
   const layoutLines=[];
+  let cy=pad;
   for(let li=0;li<n;li++){
-    const text=lines[li];
-    const y=pad+li*lineH;
+    const text=parsed[li].text;
+    const lineH=lineHeights[li];
+    const y=cy;
+    cy+=lineH;
 
-    // Binary search for font size that fills availW exactly
+    // Binary search for font size that fills availW
+    // Font size capped at lineH * 1.1 (slight overflow ok for vertical touching)
     let lo=4,hi=lineH*1.5,bestFS=4;
     for(let i=0;i<40;i++){
       const mid=(lo+hi)/2;
-      const w=measW(text,mid,font);
-      if(w<=availW&&mid<=lineH*1.1){bestFS=mid;lo=mid+0.01}else{hi=mid-0.01}
+      if(measW(text,mid,font)<=availW&&mid<=lineH*1.1){bestFS=mid;lo=mid+0.01}else{hi=mid-0.01}
     }
 
-    // Measure per-character for score lines
+    // Per-character positions with horizontal stretch
     const chars=[];
     let cx=pad;
     const lineW=measW(text,bestFS,font);
-    const stretchX=availW/lineW; // horizontal stretch to fill width exactly
-
+    const stretchX=availW/lineW;
     for(const ch of text){
       const cw=measW(ch,bestFS,font)*stretchX;
       chars.push({ch,x:cx,w:cw});
@@ -286,16 +304,30 @@ async function generateWelded(){
   // Cut outline
   parts.push(`<path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.3"/>`);
 
-  // Score lines
+  // Score lines: character outlines + vertical lines between letters + horizontal lines between rows
   if(showScore){
     for(const ln of lines){
       const baseline=ln.y+ln.lineH*0.82;
-      // Render each character outline as a score line using the stretched transform
+
+      // Character outlines
       for(const c of ln.chars){
         if(c.ch===' ')continue;
-        // Use transform to match the stretch
         parts.push(`<text x="${c.x.toFixed(1)}" y="${baseline.toFixed(1)}" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.25" transform="translate(${c.x.toFixed(1)},${baseline.toFixed(1)}) scale(${ln.stretchX.toFixed(4)},1) translate(${(-c.x).toFixed(1)},${(-baseline).toFixed(1)})">${esc(c.ch)}</text>`);
       }
+
+      // Vertical score lines between characters (at each boundary where letters meet)
+      for(let ci=1;ci<ln.chars.length;ci++){
+        const bx=ln.chars[ci].x;
+        const top=ln.y;
+        const bot=ln.y+ln.lineH;
+        parts.push(`<line x1="${bx.toFixed(1)}" y1="${top.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${bot.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
+      }
+    }
+
+    // Horizontal score lines between rows (where lines meet)
+    for(let li=1;li<lines.length;li++){
+      const y=lines[li].y;
+      parts.push(`<line x1="${pad}" y1="${y.toFixed(1)}" x2="${(pad+availW)}" y2="${y.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
     }
   }
 
