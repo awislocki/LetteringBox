@@ -434,12 +434,13 @@ LOVE+</textarea>
     function parseLines(raw, nudgePct) {
       return raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(line => {
         let modifier = 1;
-        if (line.endsWith('+')) {
-          modifier = 1 + nudgePct / 100;
-          line = line.slice(0, -1).trimEnd();
-        } else if (line.endsWith('-')) {
-          modifier = 1 - nudgePct / 100;
-          line = line.slice(0, -1).trimEnd();
+        // Count trailing + or - characters: LOVE+++ = 3 steps bigger
+        const pm = line.match(/(\++|-+)$/);
+        if (pm) {
+          const count = pm[1].length;
+          const dir = pm[1][0] === '+' ? 1 : -1;
+          modifier = Math.max(0.2, 1 + dir * count * nudgePct / 100);
+          line = line.slice(0, pm.index).trimEnd();
         }
         return { text: line, modifier };
       });
@@ -480,7 +481,8 @@ LOVE+</textarea>
     }
 
     function lineToSvgPath(font, line, settings, targetWidth) {
-      const fontSize = settings.baseFontSize * line.modifier;
+      // Font size is driven by width-fitting only — modifier affects HEIGHT via scaleY
+      const fontSize = settings.baseFontSize;
       const initial = measureGlyphs(font, line.text, fontSize, settings.letterSpacing, settings.wordSpacing);
       const fitScale = initial.width > 0 ? targetWidth / initial.width : 1;
       const scaledFontSize = fontSize * fitScale;
@@ -522,7 +524,8 @@ LOVE+</textarea>
 
       return { cutPath: groupPath.trim(), scorePath: scorePath.trim(),
                debugPath: debugPath.trim(), width: targetWidth, height: measured.height,
-               ascender: measured.ascender, descender: measured.descender, baselineTop: top, fontSize: scaledFontSize };
+               ascender: measured.ascender, descender: measured.descender, baselineTop: top,
+               fontSize: scaledFontSize, scaleY: line.modifier };
     }
 
     async function buildSvg() {
@@ -558,14 +561,19 @@ LOVE+</textarea>
         for (let i = 0; i < built.length; i++) {
           const line = built[i];
           const lineTop = y;
-          const lineBottom = y + line.height;
+          // scaleY from +/- modifier: stretches height of this line's text
+          const sy = line.scaleY || 1;
+          const scaledH = line.height * sy;
+          const lineBottom = y + scaledH;
           const cutParts = [], scoreParts = [], debugParts = [];
 
-          cutParts.push(`<path d="${line.cutPath}" transform="translate(${settings.paddingX}, ${lineTop})" />`);
+          // Apply scaleY via transform: translate to position, then scale vertically from top edge
+          const tx = `translate(${settings.paddingX}, ${lineTop}) scale(1, ${sy.toFixed(4)})`;
+          cutParts.push(`<path d="${line.cutPath}" transform="${tx}" />`);
           if (settings.scoreLines && line.scorePath)
-            scoreParts.push(`<path d="${line.scorePath}" transform="translate(${settings.paddingX}, ${lineTop})" />`);
+            scoreParts.push(`<path d="${line.scorePath}" transform="${tx}" />`);
           if (settings.showBoxes && line.debugPath)
-            debugParts.push(`<path d="${line.debugPath}" transform="translate(${settings.paddingX}, ${lineTop})" />`);
+            debugParts.push(`<path d="${line.debugPath}" transform="${tx}" />`);
 
           // Thin vertical bridges between lines — spread across the width
           if (settings.drawConnectors && prevBottom !== null) {
@@ -583,7 +591,7 @@ LOVE+</textarea>
           }
 
           lineBlocks.push({ cutParts, scoreParts, debugParts });
-          y += line.height + settings.lineSpacing - settings.verticalOverlap;
+          y += scaledH + settings.lineSpacing - settings.verticalOverlap;
           prevBottom = lineBottom;
         }
 
