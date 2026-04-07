@@ -369,8 +369,10 @@ async function render() {
   svg.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
 
   // Fill layer
-  svg.push(`  <!-- FILL: welded text block -->`)
-  svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
+  // The welded path IS the cut — laser cuts around these letters.
+  // Fill for preview visibility + hairline stroke for the actual cut line.
+  svg.push(`  <!-- CUT: welded text outline — laser cuts this path -->`)
+  svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="${fillColor}" stroke-width="0.01"/>`);
 
 
   // Score layer
