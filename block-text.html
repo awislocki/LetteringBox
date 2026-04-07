@@ -355,6 +355,26 @@ LOVE+</textarea>
         </div>
       </div>
 
+      <div class="group" id="shapeGroup">
+        <h2>Fit to Shape <span style="font-size:11px;color:var(--muted);font-weight:400">(experimental)</span></h2>
+        <label class="check"><input id="enableShape" type="checkbox" /> Enable shape mask</label>
+        <div id="shapeControls" style="display:none;margin-top:8px;">
+          <label for="shapeSelect">Shape</label>
+          <select id="shapeSelect">
+            <option value="circle">Circle</option>
+            <option value="diamond" selected>Diamond</option>
+            <option value="heart">Heart</option>
+            <option value="star">Star</option>
+            <option value="cross">Cross</option>
+            <option value="oval">Oval</option>
+            <option value="hexagon">Hexagon</option>
+            <option value="triangle">Triangle</option>
+          </select>
+          <label class="check"><input id="showShapeOutline" type="checkbox" checked /> Show shape outline</label>
+          <div class="tiny" style="margin-top:6px">Text is clipped to the shape. Import SVG into Inkscape and use Path &gt; Intersection to finalize.</div>
+        </div>
+      </div>
+
       <div class="group">
         <h2>Output</h2>
         <label class="check"><input id="scoreLines" type="checkbox" checked /> Score lines between letters</label>
@@ -481,6 +501,60 @@ LOVE+</textarea>
 
     function rectPath(x, y, w, h) {
       return `M ${x} ${y} L ${x+w} ${y} L ${x+w} ${y+h} L ${x} ${y+h} Z`;
+    }
+
+    // Shape path generators — return SVG path d for a shape centered in (0,0)-(w,h)
+    function shapePath(shape, w, h) {
+      const cx = w / 2, cy = h / 2;
+      const r = Math.min(w, h) / 2;
+      switch (shape) {
+        case 'circle':
+          return `M${cx},${cy-r} A${r},${r},0,1,1,${cx},${cy+r} A${r},${r},0,1,1,${cx},${cy-r} Z`;
+        case 'diamond':
+          return `M${cx},0 L${w},${cy} L${cx},${h} L0,${cy} Z`;
+        case 'heart': {
+          const pts = [];
+          for (let a = 0; a < Math.PI * 2; a += 0.02) {
+            const x = 16 * Math.sin(a) ** 3;
+            const y = -(13 * Math.cos(a) - 5 * Math.cos(2*a) - 2 * Math.cos(3*a) - Math.cos(4*a));
+            pts.push([(cx + x * w / 36).toFixed(1), (cy + y * h / 36 - h * 0.05).toFixed(1)]);
+          }
+          return 'M' + pts.map(p => p.join(',')).join('L') + 'Z';
+        }
+        case 'star': {
+          const or = r, ir = r * 0.38;
+          const pts = [];
+          for (let i = 0; i < 5; i++) {
+            const oa = (i * 72 - 90) * Math.PI / 180;
+            const ia = ((i * 72 + 36) - 90) * Math.PI / 180;
+            pts.push(`${(cx + or * Math.cos(oa)).toFixed(1)},${(cy + or * Math.sin(oa)).toFixed(1)}`);
+            pts.push(`${(cx + ir * Math.cos(ia)).toFixed(1)},${(cy + ir * Math.sin(ia)).toFixed(1)}`);
+          }
+          return 'M' + pts.join('L') + 'Z';
+        }
+        case 'cross': {
+          const aw = w * 0.34, ah = h * 0.34;
+          const l = cx - aw/2, ri = cx + aw/2;
+          const ht = cy - ah/2, hb = cy + ah/2;
+          return `M${l},0 H${ri} V${ht} H${w} V${hb} H${ri} V${h} H${l} V${hb} H0 V${ht} H${l} Z`;
+        }
+        case 'oval': {
+          const rx = w / 2, ry = h / 2 * 0.7;
+          return `M${cx},${cy-ry} A${rx},${ry},0,1,1,${cx},${cy+ry} A${rx},${ry},0,1,1,${cx},${cy-ry} Z`;
+        }
+        case 'hexagon': {
+          const pts = [];
+          for (let i = 0; i < 6; i++) {
+            const a = (i * 60 - 90) * Math.PI / 180;
+            pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+          }
+          return 'M' + pts.join('L') + 'Z';
+        }
+        case 'triangle':
+          return `M${cx},0 L${w},${h} L0,${h} Z`;
+        default:
+          return shapePath('diamond', w, h);
+      }
     }
 
     function lineToSvgPath(font, line, settings, targetWidth) {
@@ -628,12 +702,27 @@ LOVE+</textarea>
         const sw = settings.outputWidth * settings.exportScale;
         const sh = height * settings.exportScale;
 
+        // Shape mask (optional)
+        const useShape = document.getElementById('enableShape').checked;
+        const shapeType = document.getElementById('shapeSelect').value;
+        const showShapeOutline = document.getElementById('showShapeOutline').checked;
+        let shapeDefs = '', shapeClipAttr = '', shapeOutlineSvg = '';
+
+        if (useShape) {
+          const sp = shapePath(shapeType, settings.outputWidth, height);
+          shapeDefs = `  <defs><clipPath id="shapeClip"><path d="${sp}"/></clipPath></defs>\n`;
+          shapeClipAttr = ' clip-path="url(#shapeClip)"';
+          if (showShapeOutline) {
+            shapeOutlineSvg = `  <path d="${sp}" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.4"/>\n`;
+          }
+        }
+
         const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${sw}" height="${sh}" viewBox="0 0 ${settings.outputWidth} ${height}" fill="none">
-  <g id="cut-layer" fill="#000000" stroke="none">
+${shapeDefs}${shapeOutlineSvg}  <g id="cut-layer" fill="#000000" stroke="none"${shapeClipAttr}>
     ${lineBlocks.flatMap(b => b.cutParts).join('\n    ')}
   </g>
-  <g id="score-layer" fill="none" stroke="#2563eb" stroke-width="0.8" vector-effect="non-scaling-stroke">
+  <g id="score-layer" fill="none" stroke="#2563eb" stroke-width="0.8" vector-effect="non-scaling-stroke"${shapeClipAttr}>
     ${lineBlocks.flatMap(b => b.scoreParts).join('\n    ')}
   </g>
   <g id="debug-layer" fill="none" stroke="#ff00aa" stroke-width="0.5" opacity="0.45">
@@ -749,6 +838,14 @@ LOVE+</textarea>
       reader.readAsText(file);
       loadFileInput.value = '';
     });
+
+    // Shape toggle
+    document.getElementById('enableShape').addEventListener('change', function() {
+      document.getElementById('shapeControls').style.display = this.checked ? 'block' : 'none';
+      buildSvg();
+    });
+    document.getElementById('shapeSelect').addEventListener('change', buildSvg);
+    document.getElementById('showShapeOutline').addEventListener('change', buildSvg);
 
     buildSvg();
 
