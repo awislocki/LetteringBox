@@ -370,15 +370,18 @@ async function render() {
   svg.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
 
   // Fill layer
-  // The welded path IS the cut — laser cuts around these letters.
+  // The welded path IS the cut — laser follows this outline to cut the letters out.
+  // Always include both: filled preview + red hairline cut stroke.
+  // Laser software reads the red stroke as the cut line.
   const outlineView = document.getElementById('outlineView').checked;
-  svg.push(`  <!-- CUT: welded text — laser cuts this path -->`);
   if (outlineView) {
-    // Outline only — see exactly what the laser cuts
+    svg.push(`  <!-- CUT: laser cuts along this red outline -->`);
     svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.5"/>`);
   } else {
-    // Filled — see what the finished piece looks like
-    svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="${fillColor}" stroke-width="0.01"/>`);
+    svg.push(`  <!-- PREVIEW FILL -->`);
+    svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
+    svg.push(`  <!-- CUT: laser cuts along this red outline -->`);
+    svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.01"/>`);
   }
 
 
