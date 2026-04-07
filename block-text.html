@@ -286,9 +286,16 @@ LOVE+</textarea>
             <input id="letterSpacing" type="number" min="-40" max="80" step="0.5" value="-12" />
           </div>
           <div>
+            <label for="wordSpacing">Word spacing</label>
+            <input id="wordSpacing" type="number" min="-40" max="120" step="1" value="0" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <div>
             <label for="sizeNudge">+/- nudge %</label>
             <input id="sizeNudge" type="number" min="1" max="50" step="1" value="8" />
           </div>
+          <div></div>
         </div>
       </div>
 
@@ -362,6 +369,7 @@ LOVE+</textarea>
       baseFontSize: document.getElementById('baseFontSize'),
       lineSpacing: document.getElementById('lineSpacing'),
       letterSpacing: document.getElementById('letterSpacing'),
+      wordSpacing: document.getElementById('wordSpacing'),
       sizeNudge: document.getElementById('sizeNudge'),
       outputWidth: document.getElementById('outputWidth'),
       paddingX: document.getElementById('paddingX'),
@@ -413,7 +421,8 @@ LOVE+</textarea>
       });
     }
 
-    function measureGlyphs(font, text, fontSize, letterSpacing) {
+    function measureGlyphs(font, text, fontSize, letterSpacing, wordSpacing) {
+      wordSpacing = wordSpacing || 0;
       const scale = fontSize / font.unitsPerEm;
       const glyphs = font.stringToGlyphs(text);
       const items = [];
@@ -427,7 +436,9 @@ LOVE+</textarea>
         const glyphPath = g.getPath(x, 0, fontSize);
         const bbox = glyphPath.getBoundingBox();
         items.push({ glyph: g, x, advance, kern, path: glyphPath, bbox, index: i, char: text[i] || '' });
-        x += advance + kern + letterSpacing;
+        // Extra spacing after space characters
+        const isSpace = text[i] === ' ';
+        x += advance + kern + letterSpacing + (isSpace ? wordSpacing : 0);
       }
 
       const valid = items.filter(i => Number.isFinite(i.bbox.x1) && Number.isFinite(i.bbox.x2));
@@ -446,10 +457,10 @@ LOVE+</textarea>
 
     function lineToSvgPath(font, line, settings, targetWidth) {
       const fontSize = settings.baseFontSize * line.modifier;
-      const initial = measureGlyphs(font, line.text, fontSize, settings.letterSpacing);
+      const initial = measureGlyphs(font, line.text, fontSize, settings.letterSpacing, settings.wordSpacing);
       const fitScale = initial.width > 0 ? targetWidth / initial.width : 1;
       const scaledFontSize = fontSize * fitScale;
-      const measured = measureGlyphs(font, line.text, scaledFontSize, settings.letterSpacing * fitScale);
+      const measured = measureGlyphs(font, line.text, scaledFontSize, settings.letterSpacing * fitScale, settings.wordSpacing * fitScale);
 
       let groupPath = '', scorePath = '', debugPath = '';
       const leftOffset = -measured.minX;
@@ -488,7 +499,8 @@ LOVE+</textarea>
 
         const settings = {
           baseFontSize: +els.baseFontSize.value, lineSpacing: +els.lineSpacing.value,
-          letterSpacing: +els.letterSpacing.value, sizeNudge: +els.sizeNudge.value,
+          letterSpacing: +els.letterSpacing.value, wordSpacing: +els.wordSpacing.value,
+          sizeNudge: +els.sizeNudge.value,
           outputWidth: +els.outputWidth.value, paddingX: +els.paddingX.value,
           paddingY: +els.paddingY.value, verticalOverlap: +els.verticalOverlap.value,
           connectorWidth: +els.connectorWidth.value, exportScale: +els.exportScale.value,
