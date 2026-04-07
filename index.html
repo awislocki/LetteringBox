@@ -9,8 +9,13 @@
 :root{--bg:#1a1a2e;--sf:#16213e;--s2:#0f3460;--ac:#e94560;--tx:#eee;--dm:#888;--bd:#333}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden}
-.app{display:grid;grid-template-columns:370px 1fr;height:100vh}
-.side{background:var(--sf);padding:12px;overflow-y:auto;border-right:1px solid var(--bd)}
+.app{display:grid;grid-template-columns:370px 1fr;height:100vh;transition:grid-template-columns .3s ease}
+.app.collapsed{grid-template-columns:0 1fr}
+.side{background:var(--sf);padding:12px;overflow-y:auto;border-right:1px solid var(--bd);transition:transform .3s ease,opacity .3s ease;min-width:0}
+.app.collapsed .side{transform:translateX(-100%);opacity:0;overflow:hidden;padding:0;border:none}
+.sidebar-toggle{position:fixed;top:8px;left:374px;z-index:400;background:var(--sf);border:1px solid var(--bd);border-radius:4px;color:var(--tx);cursor:pointer;font-size:1rem;padding:2px 7px;line-height:1;transition:left .3s ease}
+.app.collapsed .sidebar-toggle{left:8px}
+@media(max-width:768px){.app{grid-template-columns:0 1fr}.side{transform:translateX(-100%);opacity:0;overflow:hidden;padding:0;border:none}.app.show-side{grid-template-columns:370px 1fr}.app.show-side .side{transform:none;opacity:1;padding:12px;overflow-y:auto;border-right:1px solid var(--bd)}.sidebar-toggle{left:8px}.app.show-side .sidebar-toggle{left:374px}}
 .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
 h1{font-size:1.1rem;color:var(--ac)}
 .sub{font-size:.68rem;color:var(--dm);margin-bottom:10px}
@@ -84,8 +89,9 @@ input[type="range"]{accent-color:var(--ac);width:100%}
 </style>
 </head>
 <body>
-<div class="app">
-<div class="side">
+<div class="app" id="appShell">
+<button class="sidebar-toggle" id="sideToggle" title="Toggle sidebar">&#9776;</button>
+<div class="side" id="sidePanel">
 <h1>Text Shape Cutter</h1>
 <p class="sub">Readable text forms the shape &mdash; no clipping, laser-cut ready</p>
 <div style="display:flex;gap:6px;margin-bottom:10px">
@@ -334,6 +340,9 @@ The dread of eternal love</textarea>
   <div class="ctx-item" data-act="stack"><span class="ctx-icon">&#8597;</span>Stack</div>
   <div class="ctx-item" data-act="unstack"><span class="ctx-icon">&#10005;</span>Unstack</div>
   <div class="ctx-sep"></div>
+  <div class="ctx-item" data-act="setcolor" style="gap:8px"><span class="ctx-icon">&#9608;</span>Color <input type="color" id="ctxColorPicker" value="#000000" style="width:22px;height:18px;padding:0;border:none;border-radius:2px;cursor:pointer" onclick="event.stopPropagation()"></div>
+  <div class="ctx-item" data-act="clearcolor"><span class="ctx-icon">&#8709;</span>Reset Color</div>
+  <div class="ctx-sep"></div>
   <div class="ctx-item" data-act="selall"><span class="ctx-icon">&#9634;</span>Select All</div>
   <div class="ctx-item" data-act="desel"><span class="ctx-icon">&#9633;</span>Deselect</div>
 </div>
@@ -362,7 +371,7 @@ const MAX_UNDO=80;
 // Capture full state snapshot
 function captureState(){
   return JSON.stringify({
-    WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep})),
+    WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep,color:w.color||null})),
     curS,
     nextStackId,
     settings:getSettings()
@@ -430,7 +439,7 @@ function doRedo(){
 }
 
 function restoreState(state){
-  WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep}));
+  WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep,color:w.color||null}));
   if(state.curS){curS=state.curS;
     document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
     const sb=document.querySelector(`[data-shape="${curS}"]`);
@@ -523,7 +532,7 @@ function saveProject(){
   const state={
     version:1,
     timestamp:new Date().toISOString(),
-    WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep})),
+    WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep,color:w.color||null})),
     curS,
     nextStackId,
     settings:getSettings()
@@ -547,7 +556,7 @@ function loadProject(input){
       const state=JSON.parse(e.target.result);
       if(!state.WD||!Array.isArray(state.WD)){alert('Invalid file');return}
       pushUndo(); // save current state before loading
-      WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep}));
+      WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep,color:w.color||null}));
       if(state.curS){curS=state.curS;
         document.querySelectorAll('[data-shape]').forEach(b=>{b.style.borderColor='';b.style.background=''});
         const sb=document.querySelector(`[data-shape="${curS}"]`);
@@ -574,7 +583,7 @@ function autoSave(){
     try{
       const state={
         version:1,
-        WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep})),
+        WD:WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep,color:w.color||null})),
         curS,nextStackId,
         settings:getSettings()
       };
@@ -589,7 +598,7 @@ function loadAutoSave(){
     if(!raw)return false;
     const state=JSON.parse(raw);
     if(!state.WD||!Array.isArray(state.WD)||state.WD.length===0)return false;
-    WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep}));
+    WD=state.WD.map(w=>({text:w.text,tier:w.tier,lb:w.lb||null,stackId:w.stackId||null,isSep:!!w.isSep,color:w.color||null}));
     if(state.curS)curS=state.curS;
     if(state.nextStackId)nextStackId=state.nextStackId;
     applySettings(state.settings);
@@ -770,11 +779,11 @@ function parseWords(){
   for(let li=0;li<srcLines.length;li++){
     const words=srcLines[li].split(/\s+/).filter(x=>x);
     for(const w of words){
-      WD.push({text:c?w.toUpperCase():w,tier:4,lb:null,stackId:null,isSep:false});
+      WD.push({text:c?w.toUpperCase():w,tier:4,lb:null,stackId:null,isSep:false,color:null});
     }
     // Insert a separator token between source lines (not after the last)
     if(lineSep&&li<srcLines.length-1){
-      WD.push({text:lineSep,tier:3,lb:'break',stackId:null,isSep:true});
+      WD.push({text:lineSep,tier:3,lb:'break',stackId:null,isSep:true,color:null});
       // Also force break on the word before the separator
       if(WD.length>=2)WD[WD.length-2].lb='break';
     }
@@ -820,8 +829,16 @@ function renderC(){
     if(w.lb==='break'&&!w.isSep)cls+=' has-stack';
     if(w.isSep)c.style.cssText='background:#333;color:var(--ac);font-size:.7rem;opacity:.7';
     c.className=cls;
-    c.textContent=w.isSep?`[${w.text}]`:w.text;
+    if(w.color){
+      const dot=document.createElement('span');
+      dot.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${w.color};margin-right:2px;vertical-align:middle`;
+      c.appendChild(dot);
+      c.appendChild(document.createTextNode(w.isSep?`[${w.text}]`:w.text));
+    } else {
+      c.textContent=w.isSep?`[${w.text}]`:w.text;
+    }
     let title=`tier ${w.tier} (${TM[w.tier]}x)`;
+    if(w.color)title+=` [color: ${w.color}]`;
     if(w.lb)title+=` [${w.lb}]`;
     if(w.stackId)title+=` [stack ${w.stackId}]`;
     c.title=title;
@@ -1266,7 +1283,7 @@ async function generate(){
   const color=document.getElementById('color').value;
 
   const rowFn=getShapeRowFn(curS,W,H);
-  const words=WD.map(w=>({text:caps?w.text.toUpperCase():w.text,tier:w.tier,lb:w.lb,stackId:w.stackId,isSep:!!w.isSep}));
+  const words=WD.map(w=>({text:caps?w.text.toUpperCase():w.text,tier:w.tier,lb:w.lb,stackId:w.stackId,isSep:!!w.isSep,color:w.color||null}));
 
   // Binary search: find largest baseSize where all words fit
   let lo=1,hi=80,bestResult=null,bestBase=1;
@@ -1318,17 +1335,20 @@ async function generate(){
         for(const sw of w.words){
           const bAttr=sw.bold?' font-weight="900"':' font-weight="700"';
           const wiAttr=sw.wi!=null?` data-wi="${sw.wi}"`:'';
-          parts.push(`  <text x="${sw.x.toFixed(1)}" y="${sw.y.toFixed(1)}" font-family="${font}" font-size="${sw.fs.toFixed(1)}"${bAttr} fill="${color}"${lsAttr}${wiAttr}>${esc(sw.text)}</text>`);
+          const wColor=(sw.wi!=null&&WD[sw.wi]&&WD[sw.wi].color)||color;
+          parts.push(`  <text x="${sw.x.toFixed(1)}" y="${sw.y.toFixed(1)}" font-family="${font}" font-size="${sw.fs.toFixed(1)}"${bAttr} fill="${wColor}"${lsAttr}${wiAttr}>${esc(sw.text)}</text>`);
         }
         parts.push(`</svg>`);
       } else if(w.isSep){
         const sepFS=ln.ch*0.4;
         const wiAttr=w.wi!=null?` data-wi="${w.wi}"`:'';
-        parts.push(`<text x="${(ln.cw/2).toFixed(1)}" y="${(ln.ch*0.7).toFixed(1)}" font-family="${font}" font-size="${sepFS.toFixed(1)}" font-weight="700" fill="${color}" text-anchor="middle"${wiAttr}>${esc(w.text)}</text>`);
+        const wColor=(w.wi!=null&&WD[w.wi]&&WD[w.wi].color)||color;
+        parts.push(`<text x="${(ln.cw/2).toFixed(1)}" y="${(ln.ch*0.7).toFixed(1)}" font-family="${font}" font-size="${sepFS.toFixed(1)}" font-weight="700" fill="${wColor}" text-anchor="middle"${wiAttr}>${esc(w.text)}</text>`);
       } else {
         const bAttr=w.bold?' font-weight="900"':' font-weight="700"';
         const wiAttr=w.wi!=null?` data-wi="${w.wi}"`:'';
-        parts.push(`<text x="${w.x.toFixed(1)}" y="${w.y.toFixed(1)}" font-family="${font}" font-size="${w.fs.toFixed(1)}"${bAttr} fill="${color}"${lsAttr}${wiAttr}>${esc(w.text)}</text>`);
+        const wColor=(w.wi!=null&&WD[w.wi]&&WD[w.wi].color)||color;
+        parts.push(`<text x="${w.x.toFixed(1)}" y="${w.y.toFixed(1)}" font-family="${font}" font-size="${w.fs.toFixed(1)}"${bAttr} fill="${wColor}"${lsAttr}${wiAttr}>${esc(w.text)}</text>`);
       }
     }
     parts.push(`</svg>`);
@@ -1560,6 +1580,13 @@ function showCtxMenu(x,y){
   m.querySelector('[data-act="fitline"]').classList.toggle('disabled',n<2);
   m.querySelector('[data-act="stack"]').classList.toggle('disabled',n<2||!consecutive);
   m.querySelector('[data-act="unstack"]').classList.toggle('disabled',![...sel].some(i=>WD[i].stackId));
+
+  // Pre-fill color picker with first selected word's color
+  const firstSel=[...sel][0];
+  if(firstSel!=null&&WD[firstSel]){
+    const cp=document.getElementById('ctxColorPicker');
+    cp.value=WD[firstSel].color||document.getElementById('color').value;
+  }
 }
 
 function hideCtxMenu(){document.getElementById('ctxMenu').style.display='none'}
@@ -1589,11 +1616,42 @@ document.getElementById('ctxMenu').addEventListener('click',e=>{
     stackToLines();
   } else if(act==='unstack'){
     unstack();
+  } else if(act==='setcolor'){
+    const c=document.getElementById('ctxColorPicker').value;
+    pushUndo();
+    for(const i of sel)WD[i].color=c;
+    renderC();generate();
+  } else if(act==='clearcolor'){
+    pushUndo();
+    for(const i of sel)WD[i].color=null;
+    renderC();generate();
   } else if(act==='selall'){
     sel.clear();WD.forEach((_,i)=>sel.add(i));renderC();updatePreviewUI();
   } else if(act==='desel'){
     sel.clear();renderC();updatePreviewUI();
   }
+});
+
+// ---- Context menu color picker: apply on change ----
+document.getElementById('ctxColorPicker').addEventListener('input',e=>{
+  if(sel.size===0)return;
+  pushUndo();
+  for(const i of sel)WD[i].color=e.target.value;
+  renderC();generate();
+});
+
+// ---- Sidebar toggle ----
+document.getElementById('sideToggle').addEventListener('click',()=>{
+  const app=document.getElementById('appShell');
+  const isMobile=window.matchMedia('(max-width:768px)').matches;
+  if(isMobile){
+    app.classList.toggle('show-side');
+  } else {
+    app.classList.toggle('collapsed');
+  }
+  // Update toggle button position
+  const btn=document.getElementById('sideToggle');
+  btn.innerHTML=app.classList.contains('collapsed')||(!app.classList.contains('show-side')&&isMobile)?'&#9776;':'&#10005;';
 });
 
 // ---- Tier popup ----
