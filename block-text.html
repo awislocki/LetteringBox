@@ -3,385 +3,486 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Block Text Generator — Weld &amp; Score</title>
-<link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=Stardos+Stencil:wght@400;700&family=Oswald:wght@400;700&family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Teko:wght@400;700&family=Russo+One&family=Bungee&family=Permanent+Marker&family=Staatliches&family=Passion+One:wght@400;700;900&family=Saira+Stencil+One&display=swap" rel="stylesheet">
+<title>Connected Block Text Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Oswald:wght@700&family=Passion+One:wght@900&family=Russo+One&family=Staatliches&family=Teko:wght@700&family=Allerta+Stencil&family=Saira+Stencil+One&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 <style>
-:root{--bg:#0f0f1a;--sf:#161625;--s2:#1a1a35;--ac:#2a9d8f;--tx:#eee;--dm:#888;--bd:#2a2a3a}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden}
-.app{display:grid;grid-template-columns:320px 1fr;height:100vh}
-.side{background:var(--sf);padding:14px;overflow-y:auto;border-right:1px solid var(--bd)}
-.side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
-h1{font-size:1.1rem;color:var(--ac)}
-.sub{font-size:.68rem;color:var(--dm);margin-bottom:10px}
-.nav{display:flex;gap:6px;margin-bottom:10px}
-.nav a{font-size:.68rem;color:var(--ac);text-decoration:none;padding:3px 8px;border:1px solid var(--bd);border-radius:3px}
-.nav a:hover{border-color:var(--ac)}.nav a.active{background:rgba(42,157,143,.2);border-color:var(--ac)}
-.s{margin-bottom:10px}.st{font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--dm);margin-bottom:3px}
-label{display:block;font-size:.72rem;margin-bottom:2px;color:var(--dm)}
-textarea{width:100%;min-height:90px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:5px;padding:6px;font-family:Georgia,serif;font-size:.8rem;line-height:1.3;resize:vertical}
-textarea:focus,select:focus,input:focus{outline:none;border-color:var(--ac)}
-select,input[type="number"]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:5px;padding:4px 6px;font-size:.74rem}
-input[type="color"]{border:1px solid var(--bd);border-radius:3px;padding:1px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.btn{width:100%;padding:8px;border:none;border-radius:5px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .12s}
-.btn-p{background:var(--ac);color:#fff}.btn-p:hover{background:#238b80}
-.btn-s{background:var(--s2);color:var(--tx);margin-top:4px;font-size:.7rem;padding:5px}.btn-s:hover{background:#252545}
-.hint{font-size:.62rem;color:var(--dm);margin-top:2px;font-style:italic}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
-.toggle{position:relative;width:28px;height:15px;cursor:pointer}
-.toggle input{display:none}
-.toggle-track{position:absolute;inset:0;background:var(--bd);border-radius:8px;transition:background .2s}
-.toggle input:checked+.toggle-track{background:var(--ac)}
-.toggle-thumb{position:absolute;top:1px;left:1px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .2s}
-.toggle input:checked~.toggle-thumb{transform:translateX(13px)}
-.pv{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;background:#080810;position:relative;overflow:auto}
-.pvb{background:#fff;border-radius:8px;padding:8px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
-.pc{position:absolute;bottom:10px;display:flex;gap:4px}
-.pc .btn{width:auto;padding:3px 10px;font-size:.66rem}
-.status{font-size:.66rem;color:var(--dm);margin-top:3px}
-.note{background:rgba(42,157,143,.06);border:1px solid rgba(42,157,143,.15);border-radius:5px;padding:5px;font-size:.6rem;color:var(--dm);line-height:1.25;margin-top:6px}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #111118; --panel: #1a1a26; --border: #2a2a3a;
+  --accent: #2a9d8f; --warn: #e76f51; --text: #e8e8ee; --dim: #777;
+}
+body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+.layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar { background: var(--panel); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.sidebar::-webkit-scrollbar { width: 4px; } .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+h1 { font-size: 1.05rem; color: var(--accent); letter-spacing: -0.02em; }
+.subtitle { font-size: .68rem; color: var(--dim); margin-top: -8px; }
+.nav { display: flex; gap: 6px; }
+.nav a { font-size: .66rem; color: var(--accent); text-decoration: none; padding: 3px 8px; border: 1px solid var(--border); border-radius: 3px; }
+.nav a:hover { border-color: var(--accent); } .nav a.active { background: rgba(42,157,143,.15); border-color: var(--accent); }
+.group { display: flex; flex-direction: column; gap: 4px; }
+.group-title { font-size: .6rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--dim); }
+label { font-size: .72rem; color: var(--dim); }
+textarea { width: 100%; min-height: 100px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-family: 'Courier New', monospace; font-size: .8rem; line-height: 1.35; resize: vertical; }
+textarea:focus, select:focus, input:focus { outline: none; border-color: var(--accent); }
+select, input[type="number"] { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: .74rem; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+input[type="color"] { width: 28px; height: 22px; border: 1px solid var(--border); border-radius: 3px; padding: 0; cursor: pointer; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.slider-row { display: flex; align-items: center; gap: 6px; }
+.slider-row input[type="range"] { flex: 1; }
+.slider-val { font-size: .66rem; color: var(--accent); min-width: 36px; text-align: right; }
+.btn { width: 100%; padding: 8px; border: none; border-radius: 4px; font-size: .78rem; font-weight: 600; cursor: pointer; transition: background .12s; }
+.btn-primary { background: var(--accent); color: #fff; } .btn-primary:hover { background: #238b80; }
+.btn-export { background: #1a3a5c; color: #8ab4f8; margin-top: 2px; } .btn-export:hover { background: #1e4470; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle { position: relative; width: 28px; height: 15px; cursor: pointer; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 8px; transition: background .2s; }
+.toggle input:checked + .toggle-track { background: var(--accent); }
+.toggle-thumb { position: absolute; top: 1px; left: 1px; width: 13px; height: 13px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.toggle input:checked ~ .toggle-thumb { transform: translateX(13px); }
+.status { font-size: .66rem; color: var(--dim); min-height: 1em; }
+.warn { color: var(--warn); font-weight: 600; }
+.note { font-size: .58rem; color: var(--dim); line-height: 1.25; padding: 6px; background: rgba(42,157,143,.05); border: 1px solid rgba(42,157,143,.12); border-radius: 4px; }
+
+/* ── Preview ── */
+.preview { display: flex; align-items: center; justify-content: center; background: #0a0a10; position: relative; overflow: auto; padding: 20px; }
+.preview-card { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+.preview-controls { position: absolute; bottom: 10px; display: flex; gap: 4px; }
+.preview-controls button { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 3px 10px; font-size: .64rem; cursor: pointer; }
+.preview-controls button:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
-<div class="app">
-<div class="side">
-  <h1>Block Text Generator</h1>
-  <p class="sub">Every letter welded. Every line joined. One piece.</p>
+<div class="layout">
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<div class="sidebar">
+  <div>
+    <h1>Connected Block Text</h1>
+    <p class="subtitle">Every letter joined. Every line welded. One cuttable piece.</p>
+  </div>
   <div class="nav">
     <a href="index.html">Shape Cutter</a>
     <a href="block-text.html" class="active">Block Text</a>
   </div>
 
-  <div class="s">
-    <div class="st">Text</div>
-    <textarea id="txtIn">Every day and every dark night
-So hard to speak without lying
-The dread of eternal love</textarea>
-    <p class="hint">Each line fills the block width. Add +++ or --- at end of a line to make it bigger or smaller.</p>
+  <!-- Text -->
+  <div class="group">
+    <div class="group-title">Text</div>
+    <textarea id="inputText">EVERY DAY
+AND EVERY
+DARK NIGHT
+THE DREAD
+OF ETERNAL
+LOVE</textarea>
+    <p style="font-size:.6rem;color:var(--dim)">One line per row. Add <b>+</b> or <b>-</b> at end to adjust that line's size (e.g. <code>LOVE+++</code>).</p>
   </div>
 
-  <div class="s">
-    <div class="st">Block Size</div>
+  <!-- Dimensions -->
+  <div class="group">
+    <div class="group-title">Dimensions</div>
     <div class="row">
-      <div><label>Width</label><input type="number" id="bw" value="500" min="100" max="2000" step="10"></div>
-      <div><label>Height</label><input type="number" id="bh" value="500" min="100" max="2000" step="10"></div>
+      <div><label>Width</label><input type="number" id="blockW" value="400" min="50" max="2000" step="10"></div>
+      <div><label>Height</label><input type="number" id="blockH" value="400" min="50" max="2000" step="10"></div>
     </div>
-    <div><label style="margin-top:4px">Padding</label><input type="number" id="pad" value="8" min="0" max="50"></div>
+    <div><label>Padding</label><input type="number" id="padding" value="0" min="0" max="60"></div>
   </div>
 
-  <div class="s">
-    <div class="st">Font</div>
-    <select id="font">
-      <optgroup label="Dense (best for welding)">
-        <option value="Impact" selected>Impact</option>
-        <option value="Anton">Anton</option>
-        <option value="'Bebas Neue'">Bebas Neue</option>
-        <option value="Teko">Teko</option>
-        <option value="Oswald">Oswald</option>
-        <option value="Staatliches">Staatliches</option>
-        <option value="'Passion One'">Passion One</option>
-      </optgroup>
-      <optgroup label="Bold">
-        <option value="'Arial Black'">Arial Black</option>
-        <option value="'Russo One'">Russo One</option>
-        <option value="Bungee">Bungee</option>
-        <option value="'Black Ops One'">Black Ops One</option>
-      </optgroup>
-      <optgroup label="Stencil (laser safe)">
-        <option value="'Allerta Stencil'">Allerta Stencil</option>
-        <option value="'Stardos Stencil'">Stardos Stencil</option>
-        <option value="'Saira Stencil One'">Saira Stencil One</option>
-      </optgroup>
-      <optgroup label="System">
-        <option value="Arial">Arial</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Verdana">Verdana</option>
-      </optgroup>
+  <!-- Font -->
+  <div class="group">
+    <div class="group-title">Font</div>
+    <select id="fontFamily">
+      <option value="Impact" selected>Impact</option>
+      <option value="Anton">Anton</option>
+      <option value="'Bebas Neue'">Bebas Neue</option>
+      <option value="Teko">Teko</option>
+      <option value="Oswald">Oswald</option>
+      <option value="Staatliches">Staatliches</option>
+      <option value="'Passion One'">Passion One</option>
+      <option value="'Russo One'">Russo One</option>
+      <option value="'Black Ops One'">Black Ops One</option>
+      <option value="'Allerta Stencil'">Allerta Stencil</option>
+      <option value="'Saira Stencil One'">Saira Stencil One</option>
+      <option value="'Arial Black'">Arial Black</option>
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
     </select>
   </div>
 
-  <div class="s">
-    <div class="st">Options</div>
-    <div class="toggle-row"><label style="margin:0">Uppercase</label><label class="toggle"><input type="checkbox" id="caps" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-    <div class="toggle-row"><label style="margin:0">Score lines (letter outlines)</label><label class="toggle"><input type="checkbox" id="showScore" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
-  </div>
-
-  <div class="s">
-    <div class="st">Colors</div>
-    <div class="row">
-      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="fillColor" value="#000000" style="width:26px;height:22px"><label style="margin:0">Fill</label></div>
-      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="scoreColor" value="#0000FF" style="width:26px;height:22px"><label style="margin:0">Score</label></div>
+  <!-- Spacing -->
+  <div class="group">
+    <div class="group-title">Spacing</div>
+    <label>Letter spacing</label>
+    <div class="slider-row">
+      <input type="range" id="letterSpace" min="-10" max="5" value="-2">
+      <span class="slider-val" id="letterSpaceVal">-2%</span>
+    </div>
+    <label>Line overlap</label>
+    <div class="slider-row">
+      <input type="range" id="lineOverlap" min="0" max="30" value="12">
+      <span class="slider-val" id="lineOverlapVal">12%</span>
     </div>
   </div>
 
-  <div class="s">
-    <button class="btn btn-p" onclick="generateWelded()">Generate Welded SVG</button>
-    <button class="btn btn-s" onclick="exportSVG()">Export SVG</button>
+  <!-- Options -->
+  <div class="group">
+    <div class="group-title">Options</div>
+    <div class="toggle-row"><label>Uppercase</label><label class="toggle"><input type="checkbox" id="uppercase" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div class="toggle-row"><label>Score lines (letter outlines)</label><label class="toggle"><input type="checkbox" id="scoreLines" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+    <div class="toggle-row"><label>Show cut outline</label><label class="toggle"><input type="checkbox" id="cutOutline" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+  </div>
+
+  <!-- Colors -->
+  <div class="group">
+    <div class="group-title">Colors</div>
+    <div class="row-3">
+      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="fillColor" value="#000000"><label>Fill</label></div>
+      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="cutColor" value="#FF0000"><label>Cut</label></div>
+      <div style="display:flex;align-items:center;gap:4px"><input type="color" id="scoreColor" value="#0000FF"><label>Score</label></div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="group">
+    <button class="btn btn-primary" onclick="render()">Generate</button>
+    <button class="btn btn-export" onclick="download()">Download SVG</button>
     <div class="status" id="status"></div>
   </div>
 
   <div class="note">
-    <b>How it works:</b> Each line's font size is calculated so the text fills the full block width.
-    Line height = block height / number of lines — no gaps. Letters touch horizontally, lines touch
-    vertically. The canvas rendering is traced into a single welded &lt;path&gt;.
-    Dots on i, j are connected. Everything is one piece.
+    <b>How it works:</b> Each line is measured and scaled to fill the block width.
+    Letters are spaced tightly (negative spacing) so they physically overlap.
+    Lines are vertically overlapped so rows connect. The canvas bitmap is traced
+    into a single welded vector path. Score lines (blue) mark letter boundaries
+    for engraving. Cut outline (red) marks the outer edge for cutting.
   </div>
 </div>
 
-<div class="pv">
-  <div class="pvb" id="pvB"></div>
-  <div class="pc">
-    <button class="btn btn-s" onclick="zm=Math.min(zm*1.25,5);aZ()">+</button>
-    <button class="btn btn-s" onclick="zm=Math.max(zm/1.25,.2);aZ()">&minus;</button>
-    <button class="btn btn-s" onclick="zm=1;aZ()">1:1</button>
+<!-- ════════════ PREVIEW ════════════ -->
+<div class="preview">
+  <div class="preview-card" id="previewCard"></div>
+  <div class="preview-controls">
+    <button onclick="setZoom(zoom*1.25)">+</button>
+    <button onclick="setZoom(zoom/1.25)">&minus;</button>
+    <button onclick="setZoom(1)">1:1</button>
   </div>
 </div>
+
 </div>
 
-<canvas id="mc" style="display:none"></canvas>
-<canvas id="weldCanvas" style="display:none"></canvas>
+<canvas id="measureCanvas" style="display:none"></canvas>
+<canvas id="renderCanvas" style="display:none"></canvas>
 
 <script>
-let zm=1,svgOut=null;
-const mctx=(()=>{const c=document.getElementById('mc');c.width=3000;c.height=300;return c.getContext('2d')})();
-function aZ(){const s=document.querySelector('#pvB svg');if(s){s.style.transform=`scale(${zm})`;s.style.transformOrigin='top center'}}
+// ═══════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════
+let zoom = 1;
+let svgOutput = '';
 
-function measW(text,fs,font){
-  mctx.font=`900 ${fs}px ${font}`;
-  return mctx.measureText(text).width;
+// ═══════════════════════════════════════════════
+//  Measurement
+// ═══════════════════════════════════════════════
+const measureCtx = (() => {
+  const c = document.getElementById('measureCanvas');
+  c.width = 4000; c.height = 400;
+  return c.getContext('2d');
+})();
+
+function measureText(text, fontSize, font) {
+  measureCtx.font = `900 ${fontSize}px ${font}`;
+  const m = measureCtx.measureText(text);
+  return {
+    width: m.width,
+    ascent: m.actualBoundingBoxAscent || fontSize * 0.8,
+    descent: m.actualBoundingBoxDescent || fontSize * 0.2,
+  };
 }
 
-// ========== THE LAYOUT: fill the block completely, no gaps ==========
-function computeLayout(){
-  const raw=document.getElementById('txtIn').value;
-  const W=parseInt(document.getElementById('bw').value);
-  const H=parseInt(document.getElementById('bh').value);
-  const pad=parseInt(document.getElementById('pad').value);
-  const font=document.getElementById('font').value;
-  const caps=document.getElementById('caps').checked;
+// ═══════════════════════════════════════════════
+//  Layout: parse text, compute per-line sizing
+// ═══════════════════════════════════════════════
+function computeLayout() {
+  const raw = document.getElementById('inputText').value;
+  const W = +document.getElementById('blockW').value;
+  const H = +document.getElementById('blockH').value;
+  const pad = +document.getElementById('padding').value;
+  const font = document.getElementById('fontFamily').value;
+  const caps = document.getElementById('uppercase').checked;
+  const letterSpacePct = +document.getElementById('letterSpace').value;
+  const lineOverlapPct = +document.getElementById('lineOverlap').value;
 
-  const srcLines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
-  if(!srcLines.length)return null;
+  // Parse lines, strip +/- modifiers
+  const parsed = raw.split('\n').map(l => l.trim()).filter(l => l).map(l => {
+    let text = caps ? l.toUpperCase() : l;
+    let boost = 0;
+    const pm = text.match(/(\++|-+)$/);
+    if (pm) {
+      boost = pm[1][0] === '+' ? pm[1].length : -pm[1].length;
+      text = text.slice(0, pm.index).trim();
+    }
+    return { text, boost };
+  }).filter(p => p.text);
 
-  // Parse +/- modifiers at end of each line
-  // "HELLO+++" = font boost of +3 steps, "HELLO--" = shrink by 2 steps
-  const parsed=srcLines.map(l=>{
-    let t=caps?l.toUpperCase():l;
-    let boost=0;
-    // Count trailing + or -
-    const plusMatch=t.match(/(\++)$/);
-    const minusMatch=t.match(/(-+)$/);
-    if(plusMatch){boost=plusMatch[1].length;t=t.slice(0,-boost).trim()}
-    else if(minusMatch){boost=-minusMatch[1].length;t=t.slice(0,minusMatch.index).trim()}
-    return{text:t,boost};
-  }).filter(p=>p.text);
+  if (!parsed.length) return null;
 
-  const n=parsed.length;
-  if(!n)return null;
+  const n = parsed.length;
+  const innerW = W - pad * 2;
+  const innerH = H - pad * 2;
 
-  const availW=W-pad*2;
-  const availH=H-pad*2;
+  // Each line gets equal vertical space
+  const lineH = innerH / n;
 
-  // Every line gets equal height. No gaps.
-  const lineH=availH/n;
-
-  // Layout each line
-  const layoutLines=[];
-  let cy=pad;
-  for(let li=0;li<n;li++){
-    const text=parsed[li].text;
-    const boost=parsed[li].boost; // +/- font size modifier
-    const y=cy;
-    cy+=lineH;
-
-    // Binary search for font size that fills availW.
-    // Font size will be LARGER than lineH — glyphs only fill ~70% of em box,
-    // so we need ~lineH/0.7 to make the actual ink fill the full line slot
-    // and overlap into neighbors for welding.
-    let lo=4,hi=lineH*2.5,bestFS=4;
-    for(let i=0;i<40;i++){
-      const mid=(lo+hi)/2;
-      if(measW(text,mid,font)<=availW){bestFS=mid;lo=mid+0.01}else{hi=mid-0.01}
+  // Per-line: find font size so text fills innerW, then apply boost
+  const lines = parsed.map((p, i) => {
+    // Binary search for font size that makes text width = innerW
+    let lo = 1, hi = 500, fs = 1;
+    for (let iter = 0; iter < 50; iter++) {
+      const mid = (lo + hi) / 2;
+      const w = measureText(p.text, mid, font).width;
+      // Apply letter spacing: effective width = w + (charCount-1) * mid * spacePct/100
+      const ew = w + (p.text.length - 1) * mid * letterSpacePct / 100;
+      if (ew <= innerW) { fs = mid; lo = mid + 0.01; } else { hi = mid - 0.01; }
     }
 
-    // Apply +/- boost
-    bestFS*=Math.max(0.3, 1+boost*0.15);
+    // Apply +/- boost (each step = 12%)
+    fs *= Math.max(0.3, 1 + p.boost * 0.12);
 
-    // Per-character positions with horizontal stretch
-    const chars=[];
-    let cx=pad;
-    const lineW=measW(text,bestFS,font);
-    const stretchX=availW/lineW;
-    for(const ch of text){
-      const cw=measW(ch,bestFS,font)*stretchX;
-      chars.push({ch,x:cx,w:cw});
-      cx+=cw;
+    // Compute horizontal stretch so this line fills innerW exactly
+    const natW = measureText(p.text, fs, font).width +
+                 (p.text.length - 1) * fs * letterSpacePct / 100;
+    const scaleX = innerW / natW;
+
+    // Vertical stretch: fill lineH, plus overlap into neighbors
+    const overlapExtra = 1 + lineOverlapPct / 100;
+    const scaleY = (lineH / fs) * overlapExtra;
+
+    // Baseline position: center vertically in slot
+    const y = pad + i * lineH;
+    const baseline = y + lineH * 0.5 + fs * scaleY * 0.3;
+
+    // Per-character x positions (for score lines)
+    const chars = [];
+    let cx = pad;
+    for (let ci = 0; ci < p.text.length; ci++) {
+      const cw = measureText(p.text[ci], fs, font).width * scaleX;
+      const sp = ci > 0 ? fs * scaleX * letterSpacePct / 100 : 0;
+      cx += sp;
+      chars.push({ ch: p.text[ci], x: cx, w: cw });
+      cx += cw;
     }
 
-    layoutLines.push({text,y,fs:bestFS,lineH,chars,stretchX});
-  }
+    return { text: p.text, y, fs, lineH, scaleX, scaleY, baseline, chars };
+  });
 
-  return{lines:layoutLines,W,H,pad,availW,availH,font};
+  return { lines, W, H, pad, innerW, innerH, font };
 }
 
-// ========== GENERATE WELDED VECTOR ==========
-async function generateWelded(){
-  const L=computeLayout();
-  if(!L)return;
-  if(typeof ImageTracer==='undefined'){document.getElementById('status').textContent='ImageTracer not loaded';return}
+// ═══════════════════════════════════════════════
+//  Render: canvas → trace → SVG
+// ═══════════════════════════════════════════════
+async function render() {
+  const layout = computeLayout();
+  if (!layout) return;
 
-  const{lines,W,H,pad,availW,availH,font}=L;
-  const fillColor=document.getElementById('fillColor').value;
-  const scoreColor=document.getElementById('scoreColor').value;
-  const showScore=document.getElementById('showScore').checked;
-  const stat=s=>{document.getElementById('status').textContent=s};
+  const { lines, W, H, pad, innerW, innerH, font } = layout;
+  const fillColor = document.getElementById('fillColor').value;
+  const cutColor = document.getElementById('cutColor').value;
+  const scoreColor = document.getElementById('scoreColor').value;
+  const showScore = document.getElementById('scoreLines').checked;
+  const showCut = document.getElementById('cutOutline').checked;
 
-  stat('Rendering to canvas...');
-  await tick();
+  setStatus('Rendering...');
+  await frame();
 
-  // Render to 3x canvas — each line fills its slot completely
-  const scale=3;
-  const cw=W*scale,ch=H*scale;
-  const canvas=document.getElementById('weldCanvas');
-  canvas.width=cw;canvas.height=ch;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,cw,ch);
-  ctx.fillStyle='#000';
+  // ── 1. Render to high-res canvas ──
+  const S = 3; // supersampling scale
+  const cw = W * S, ch = H * S;
+  const canvas = document.getElementById('renderCanvas');
+  canvas.width = cw; canvas.height = ch;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.fillStyle = '#000';
 
-  for(const ln of lines){
-    // Stretch text to fill BOTH width and height of the line slot.
-    // stretchX fills the width. stretchY fills the line height.
-    // This guarantees zero gaps — text fills every pixel of its slot.
-    const stretchY=ln.lineH/ln.fs*1.15; // scale font to fill line height exactly
-    const fs=ln.fs*scale;
-    // Baseline: font ascent is ~80% of font size. After vertical stretch,
-    // position so top of stretched text aligns with top of line slot.
-    const baseline=(ln.y+ln.fs*0.8*stretchY)*scale;
-
-    // Render whole line stretched to fill width AND height
+  for (const ln of lines) {
     ctx.save();
-    ctx.translate(pad*scale, baseline);
-    ctx.scale(ln.stretchX, stretchY); // stretch both axes
-    ctx.font=`900 ${fs}px ${font}`;
+    ctx.translate(pad * S, ln.baseline * S);
+    ctx.scale(ln.scaleX, ln.scaleY);
+    ctx.font = `900 ${ln.fs * S}px ${font}`;
+    // Render full line (natural kerning)
     ctx.fillText(ln.text, 0, 0);
     ctx.restore();
 
-    // Also render each character individually (fills any kerning gaps)
-    for(const c of ln.chars){
-      if(c.ch===' ')continue;
+    // Also render each char individually to fill kerning gaps
+    for (const c of ln.chars) {
+      if (c.ch === ' ') continue;
       ctx.save();
-      ctx.translate(c.x*scale, baseline);
-      ctx.scale(ln.stretchX, stretchY);
-      ctx.font=`900 ${fs}px ${font}`;
+      ctx.translate(c.x * S, ln.baseline * S);
+      ctx.scale(ln.scaleX, ln.scaleY);
+      ctx.font = `900 ${ln.fs * S}px ${font}`;
       ctx.fillText(c.ch, 0, 0);
       ctx.restore();
     }
   }
 
-  // Trace
-  stat('Tracing welded vectors...');
-  await tick();
+  // ── 2. Trace bitmap → vector paths ──
+  setStatus('Tracing vectors...');
+  await frame();
 
-  const imgd=ctx.getImageData(0,0,cw,ch);
+  if (typeof ImageTracer === 'undefined') {
+    setStatus('ImageTracer library not loaded. Check internet connection.', true);
+    return;
+  }
+
+  const imgData = ctx.getImageData(0, 0, cw, ch);
   let traced;
-  try{
-    traced=ImageTracer.imagedataToSVG(imgd,{
-      ltres:1,qtres:1,pathomit:4,
-      colorsampling:0,numberofcolors:2,
-      rightangleenhance:true,
-      scale:1/scale
+  try {
+    traced = ImageTracer.imagedataToSVG(imgData, {
+      ltres: 1, qtres: 1, pathomit: 4,
+      colorsampling: 0, numberofcolors: 2,
+      rightangleenhance: true,
+      scale: 1 / S,
     });
-  }catch(e){stat('Trace failed: '+e.message);return}
+  } catch (e) {
+    setStatus('Trace failed: ' + e.message, true);
+    return;
+  }
 
-  // Extract dark paths
-  const darkPaths=extractDarkPaths(traced);
-  if(!darkPaths.length){stat('No paths found');return}
+  // ── 3. Extract welded paths ──
+  const darkPaths = extractDarkPaths(traced);
+  if (!darkPaths.length) { setStatus('No paths generated.', true); return; }
 
-  // Build SVG
-  const combinedD=darkPaths.join(' ');
-  const parts=[`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`];
+  const pathCount = darkPaths.length;
+  const combinedD = darkPaths.join(' ');
 
-  // Welded fill
-  parts.push(`<path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
+  // ── 4. Build output SVG ──
+  const svg = [];
+  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
 
-  // Cut outline
-  parts.push(`<path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="#FF0000" stroke-width="0.3"/>`);
+  // Fill layer
+  svg.push(`  <!-- FILL: welded text block -->`)
+  svg.push(`  <path d="${combinedD}" fill="${fillColor}" fill-rule="evenodd" stroke="none"/>`);
 
-  // Score lines: character outlines + vertical lines between letters + horizontal lines between rows
-  if(showScore){
-    for(const ln of lines){
-      const stretchY=ln.lineH/ln.fs*1.15;
-      const baseline=ln.y+ln.fs*0.8*stretchY;
+  // Cut layer
+  if (showCut) {
+    svg.push(`  <!-- CUT: outer outline (red = laser cut) -->`);
+    svg.push(`  <path d="${combinedD}" fill="none" fill-rule="evenodd" stroke="${cutColor}" stroke-width="0.3"/>`);
+  }
 
-      // Character outlines — stretched both horizontally and vertically to match the welded render
-      for(const c of ln.chars){
-        if(c.ch===' ')continue;
-        parts.push(`<text x="0" y="0" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.25" transform="translate(${c.x.toFixed(1)},${baseline.toFixed(1)}) scale(${ln.stretchX.toFixed(4)},${stretchY.toFixed(4)})">${esc(c.ch)}</text>`);
+  // Score layer
+  if (showScore) {
+    svg.push(`  <!-- SCORE: letter outlines (blue = laser engrave) -->`);
+    for (const ln of lines) {
+      for (const c of ln.chars) {
+        if (c.ch === ' ') continue;
+        // Score each character with matching transforms
+        svg.push(`  <text x="0" y="0" font-family="${font}" font-size="${ln.fs.toFixed(1)}" font-weight="900" fill="none" stroke="${scoreColor}" stroke-width="0.2" transform="translate(${c.x.toFixed(1)},${ln.baseline.toFixed(1)}) scale(${ln.scaleX.toFixed(4)},${ln.scaleY.toFixed(4)})">${esc(c.ch)}</text>`);
       }
-
-      // Vertical score lines between characters (at each boundary where letters meet)
-      for(let ci=1;ci<ln.chars.length;ci++){
-        const bx=ln.chars[ci].x;
-        const top=ln.y;
-        const bot=ln.y+ln.lineH;
-        parts.push(`<line x1="${bx.toFixed(1)}" y1="${top.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${bot.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
+      // Horizontal score between this line and next
+      const lineBottom = ln.y + ln.lineH;
+      if (ln !== lines[lines.length - 1]) {
+        svg.push(`  <line x1="${pad}" y1="${lineBottom.toFixed(1)}" x2="${(pad + innerW).toFixed(0)}" y2="${lineBottom.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.15"/>`);
       }
-    }
-
-    // Horizontal score lines between rows (where lines meet)
-    for(let li=1;li<lines.length;li++){
-      const y=lines[li].y;
-      parts.push(`<line x1="${pad}" y1="${y.toFixed(1)}" x2="${(pad+availW)}" y2="${y.toFixed(1)}" stroke="${scoreColor}" stroke-width="0.2"/>`);
+      // Vertical scores between characters
+      for (let ci = 1; ci < ln.chars.length; ci++) {
+        const x = ln.chars[ci].x;
+        svg.push(`  <line x1="${x.toFixed(1)}" y1="${ln.y.toFixed(1)}" x2="${x.toFixed(1)}" y2="${(ln.y + ln.lineH).toFixed(1)}" stroke="${scoreColor}" stroke-width="0.15"/>`);
+      }
     }
   }
 
-  parts.push('</svg>');
-  svgOut=parts.join('\n');
+  svg.push('</svg>');
+  svgOutput = svg.join('\n');
 
-  document.getElementById('pvB').innerHTML=svgOut;
-  const el=document.querySelector('#pvB svg');
-  if(el){el.style.transform=`scale(${zm})`;el.style.transformOrigin='top center'}
+  // ── 5. Display ──
+  document.getElementById('previewCard').innerHTML = svgOutput;
+  applyZoom();
 
-  stat(`Welded: ${darkPaths.length} paths, ${lines.length} lines, ${(combinedD.length/1024).toFixed(0)}KB`);
+  // ── 6. Island detection ──
+  const islandWarning = pathCount > 1
+    ? `<span class="warn">Warning: ${pathCount} disconnected pieces detected. Increase line overlap or letter spacing.</span>`
+    : 'Single connected piece ✓';
+
+  setStatus(`${lines.length} lines · ${pathCount} path(s) · ${(combinedD.length / 1024).toFixed(0)}KB — ${islandWarning}`);
 }
 
-function extractDarkPaths(tracedSvg){
-  const doc=new DOMParser().parseFromString(tracedSvg,'image/svg+xml');
-  const paths=doc.querySelectorAll('path');
-  const dark=[];
-  for(const p of paths){
-    const fill=p.getAttribute('fill')||'';
-    let isDark=false;
-    if(fill.startsWith('rgb')){const m=fill.match(/\d+/g);if(m&&+m[0]<128)isDark=true}
-    else if(fill==='#000000'||fill==='#000'||fill==='black')isDark=true;
-    else if(fill.startsWith('#')&&fill.length>=7&&parseInt(fill.substr(1,2),16)<128)isDark=true;
-    if(isDark){const d=p.getAttribute('d');if(d)dark.push(d)}
+// ═══════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════
+function extractDarkPaths(svgStr) {
+  const doc = new DOMParser().parseFromString(svgStr, 'image/svg+xml');
+  const out = [];
+  for (const p of doc.querySelectorAll('path')) {
+    const fill = p.getAttribute('fill') || '';
+    let dark = false;
+    if (fill.startsWith('rgb')) { const m = fill.match(/\d+/g); if (m && +m[0] < 128) dark = true; }
+    else if (['#000000', '#000', 'black'].includes(fill)) dark = true;
+    else if (fill.startsWith('#') && fill.length >= 7 && parseInt(fill.substr(1, 2), 16) < 128) dark = true;
+    if (dark) { const d = p.getAttribute('d'); if (d) out.push(d); }
   }
-  if(!dark.length){for(const p of paths){const d=p.getAttribute('d');if(d)dark.push(d)}}
-  return dark;
+  // Fallback: take all paths if no dark ones found
+  if (!out.length) { for (const p of doc.querySelectorAll('path')) { const d = p.getAttribute('d'); if (d) out.push(d); } }
+  return out;
 }
 
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function tick(){return new Promise(r=>setTimeout(r,20))}
-
-function exportSVG(){
-  if(!svgOut)return;
-  const b=new Blob([svgOut],{type:'image/svg+xml'});
-  const u=URL.createObjectURL(b);
-  const a=document.createElement('a');a.href=u;a.download=`block-text-${Date.now()}.svg`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function frame() { return new Promise(r => setTimeout(r, 16)); }
+function setStatus(msg, isWarn) {
+  const el = document.getElementById('status');
+  el.innerHTML = msg;
 }
 
-// Auto-generate on load
-setTimeout(generateWelded,400);
-// Re-generate on any change
-let rT;
-function autoGen(){clearTimeout(rT);rT=setTimeout(generateWelded,500)}
-['txtIn','bw','bh','pad','font'].forEach(id=>document.getElementById(id).addEventListener('input',autoGen));
-['caps','showScore'].forEach(id=>document.getElementById(id).addEventListener('change',autoGen));
-['fillColor','scoreColor'].forEach(id=>document.getElementById(id).addEventListener('input',autoGen));
+// Zoom
+function setZoom(z) { zoom = Math.max(0.1, Math.min(5, z)); applyZoom(); }
+function applyZoom() {
+  const svg = document.querySelector('#previewCard svg');
+  if (svg) { svg.style.transform = `scale(${zoom})`; svg.style.transformOrigin = 'top left'; }
+}
+
+// Download
+function download() {
+  if (!svgOutput) return;
+  const blob = new Blob([svgOutput], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `block-text-${Date.now()}.svg`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════
+//  Slider labels
+// ═══════════════════════════════════════════════
+document.getElementById('letterSpace').oninput = function () {
+  document.getElementById('letterSpaceVal').textContent = this.value + '%';
+};
+document.getElementById('lineOverlap').oninput = function () {
+  document.getElementById('lineOverlapVal').textContent = this.value + '%';
+};
+
+// ═══════════════════════════════════════════════
+//  Auto-regenerate on any change
+// ═══════════════════════════════════════════════
+let regenTimer;
+function scheduleRegen() { clearTimeout(regenTimer); regenTimer = setTimeout(render, 400); }
+
+['inputText', 'blockW', 'blockH', 'padding', 'fontFamily', 'letterSpace', 'lineOverlap']
+  .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
+['uppercase', 'scoreLines', 'cutOutline']
+  .forEach(id => document.getElementById(id).addEventListener('change', scheduleRegen));
+['fillColor', 'cutColor', 'scoreColor']
+  .forEach(id => document.getElementById(id).addEventListener('input', scheduleRegen));
+
+// ═══════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════
+setTimeout(render, 500);
 </script>
 </body>
 </html>
